@@ -19,5 +19,5 @@ def refine(file_path:str):
   
   with open(file_path, "w", encoding='utf-8') as file:
     file.write(res)
-    
-refine('./play/fetch_one_sheet_295_4.bestdori')
+if __name__ == '__main__':  
+  refine('./play/fetch_one_sheet_295_4.bestdori')

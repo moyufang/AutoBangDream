@@ -57,11 +57,12 @@ class Note(Enum):
   Miss           = auto()
   
 class CustomPerformance:
-  def __init__(self, is_load:bool=False, file_path:str = './', is_custom_level_list=False):
+  def __init__(self, is_load:bool=False, file_path:str = '', is_custom_level_list=False):
     self.is_load = is_load
     self.file_path = file_path
     self.is_custom_level_list = is_custom_level_list
-    assert(os.path.isfile(file_path))
+    if is_load:
+      assert(os.path.isfile(file_path))
     
     # (title,      [perfect,great,good , bad  , miss ])
     self.default_weights = [
@@ -141,6 +142,8 @@ class CustomPerformance:
     self.weights_map = {}
     self.save_custom()
 
+#============ play ============#
+
 # 最大触点数
 MAX_TOUCH = 10
 
@@ -154,27 +157,29 @@ TRACK_B_LEN     = TRACK_B_X2 - TRACK_B_X1
 
 TRACK_B_BLOCK   = TRACK_B_LEN // 7
 TRACK_B_Y       = TRACK_LB_CORNER[1]
+TRACK_B_X       = [int(TRACK_B_X1+(2*i+1)*TRACK_B_LEN/14) for i in range(7)]
+TRACK_B         = [(TRACK_B_X[i], TRACK_B_Y) for i in range(7)]
 
-TRACK_BOTTOM = [(int(TRACK_B_X1+(2*i+1)*TRACK_B_LEN/14), TRACK_B_Y) for i in range(7)]
+SINGLE_PERIOD   = 0.01
 
-SINGLE_PERIOD  = 0.01
+FLICK_BIAS      = 0.0
+FLICK_PERIOD    = 0.03
+FLICK_COUNT     = 5
+FLICK_DIS       = 10
 
-FLICK_BIAS     = 0.0
-FLICK_PERIOD   = 0.03
-FLICK_COUNT    = 5
-FLICK_DIS      = 10
+DIRECT_BIAS     = 0.0
+DIRECT_PERIOD   = 0.03
+DIRECT_COUNT    = 5
+DIRECT_DIS      = 10
 
-DIRECT_BIAS    = 0.0
-DIRECT_PERIOD  = 0.03
-DIRECT_COUNT   = 5
-DIRECT_DIS     = 10
+LONG_BIAS       = 0.0
+LFLICK_PERIOD   = 0.03
+LFLICK_COUNT    = 5
+LFLICK_DIS      = 10
 
-LONG_BIAS      = 0.0
-LFLICK_PERIOD  = 0.03
-LFLICK_COUNT   = 5
-LFLICK_DIS     = 10
+SLIDE_BIAS      = -0.01
+SFLICK_PERIOD   = 0.02
+SFLICK_COUNT    = 5
+SFLICK_DIS      = 10
 
-SLIDE_BIAS     = -0.01
-SFLICK_PERIOD  = 0.02
-SFLICK_COUNT   = 5
-SFLICK_DIS     = 10
+MIDDLE_MIN_GAP = 0.005
