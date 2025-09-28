@@ -1,0 +1,14 @@
+{
+    "code-runner.executorMap": {
+        "python": "set PYTHONPATH=$workspaceRoot && python -u $fullFileName"
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}"
+    }
+}

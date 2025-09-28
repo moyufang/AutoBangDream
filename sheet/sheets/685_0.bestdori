@@ -1,0 +1,664 @@
+[
+  {
+    "type": "BPM",
+    "bpm": 140,
+    "beat": 0
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 8
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 16
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 24
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 28
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 32
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 36
+      },
+      {
+        "lane": 1,
+        "beat": 38
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 40,
+    "skill": true
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 42
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 44
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 48
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 50
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 52
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 56
+      },
+      {
+        "lane": 5,
+        "beat": 60
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 64
+      },
+      {
+        "lane": 1,
+        "beat": 68
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 3,
+    "beat": 73
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 76,
+    "skill": true
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 80
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 84
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 88
+      },
+      {
+        "lane": 1,
+        "beat": 90
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 92
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 96,
+    "skill": true
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 100
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 104
+      },
+      {
+        "lane": 5,
+        "beat": 106
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 108
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 110
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 112
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 116
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 118
+      },
+      {
+        "lane": 5,
+        "beat": 120
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 124
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 126
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 128
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 132
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 134
+      },
+      {
+        "lane": 1,
+        "beat": 136
+      }
+    ]
+  },
+  {
+    "type": "System",
+    "data": "cmd_fever_ready.wav",
+    "beat": 140
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 140
+      },
+      {
+        "lane": 5,
+        "beat": 146
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 148,
+    "charge": true
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 150
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 150,
+    "charge": true
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 152,
+    "charge": true
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 154,
+    "charge": true
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 154
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 156,
+        "charge": true
+      },
+      {
+        "lane": 1,
+        "beat": 162
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 3,
+        "beat": 164,
+        "charge": true
+      },
+      {
+        "lane": 3,
+        "beat": 168
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 170
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 170
+  },
+  {
+    "type": "System",
+    "data": "cmd_fever_start.wav",
+    "beat": 172
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 172
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 173
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 174,
+    "skill": true
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 176
+      },
+      {
+        "lane": 1,
+        "beat": 178
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 180
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 181
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 182
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 2,
+        "beat": 184
+      },
+      {
+        "lane": 2,
+        "beat": 186.5
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 184
+      },
+      {
+        "lane": 5,
+        "beat": 186.5
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 188
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 189
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 190
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 5,
+        "beat": 192
+      },
+      {
+        "lane": 5,
+        "beat": 194
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 2,
+        "beat": 196
+      },
+      {
+        "lane": 2,
+        "beat": 198
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 4,
+        "beat": 196
+      },
+      {
+        "lane": 4,
+        "beat": 198
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 200
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 201
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 202
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 3,
+        "beat": 204,
+        "skill": true
+      },
+      {
+        "lane": 3,
+        "beat": 206
+      }
+    ]
+  },
+  {
+    "type": "System",
+    "data": "cmd_fever_end.wav",
+    "beat": 207
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 208
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 208
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 210
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 210
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 3,
+        "beat": 212
+      },
+      {
+        "lane": 3,
+        "beat": 214
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 2,
+        "beat": 216
+      },
+      {
+        "lane": 2,
+        "beat": 220
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 4,
+        "beat": 216
+      },
+      {
+        "lane": 4,
+        "beat": 220
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 224
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 226
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 4,
+        "beat": 228
+      },
+      {
+        "lane": 4,
+        "beat": 231
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 232,
+    "skill": true
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 236
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 238
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 2,
+        "beat": 240
+      },
+      {
+        "lane": 2,
+        "beat": 246
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 4,
+        "beat": 240
+      },
+      {
+        "lane": 4,
+        "beat": 246
+      }
+    ]
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 1,
+        "beat": 248
+      },
+      {
+        "lane": 1,
+        "beat": 252
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 252
+  },
+  {
+    "type": "Long",
+    "connections": [
+      {
+        "lane": 4,
+        "beat": 256
+      },
+      {
+        "lane": 4,
+        "beat": 260
+      }
+    ]
+  },
+  {
+    "type": "Single",
+    "lane": 2,
+    "beat": 260
+  },
+  {
+    "type": "Single",
+    "lane": 4,
+    "beat": 262
+  },
+  {
+    "type": "Single",
+    "lane": 1,
+    "beat": 264
+  },
+  {
+    "type": "Single",
+    "lane": 5,
+    "beat": 264
+  },
+  {
+    "type": "Single",
+    "lane": 3,
+    "beat": 267.75
+  }
+]
