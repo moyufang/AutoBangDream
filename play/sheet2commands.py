@@ -1,5 +1,6 @@
 from configuration import *
 from numpy import random as rd
+from utils.adb import push_file
 
 # 根据 weights 和 performance，确定每个 note 是否产生时移，以及产生时移的幅度
 # 关键函数 get_skew 用 _get_skew 实现了多态，便于后续更新策略
@@ -8,11 +9,11 @@ class NoteSkewer:
     self.performance2bias = {
       Note.Perfect : [0.0],
       Note.Great   : [-0.032, 0.032],
-      Note.Great   : [-0.048, 0.048],
+      Note.Good   : [-0.048, 0.048],
       Note.Bad     : [-0.064, 0.064],
       Note.Miss    : [-1.000, 1.000]
     }
-    self.weights = weights.copy()
+    if weights: weights = weights.copy()
     self.performance = performance
     
     if self.performance == Performance.AllPerfect or weights == None:
@@ -20,9 +21,10 @@ class NoteSkewer:
     else:
       assert(len(weights) == 5 and sum([int(i<0.0) for i in weights]) == 0)
       if self.performance == Performance.FullCombo:
-        for i in [2,3,4]: self.weights[i] = 0.0
+        for i in [2,3,4]: weights[i] = 0.0
       for i in range(1, len(weights)): weights[i] += weights[i-1]
       self._get_skew = lambda : rd.choice(self.performance2bias[self.get_note()])
+    self.weights = weights
   def get_note(self):
     weights = self.weights
     x = rd.random() * weights[-1]
@@ -34,13 +36,13 @@ class NoteSkewer:
   def get_skew(self):
     return float(self._get_skew())
 
-# 返回操作序列，其中 timestamp 递增
+# 生成操作序列commands和保存为commands.sheet文件
 # commands = [
 #   [timestamp, "{action_type} {touch_id} {x} {y}"],
 #   ...
 # ]
-
-def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
+# 其中 timestamp 递增
+def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_skewer:NoteSkewer = None):
   if note_skewer == None: note_skewer = NoteSkewer()
   commands = []
   
@@ -56,7 +58,6 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
       raw_data[-1]['connections'][-1]['beat'] += big_delay
   
   bpm, base_t, t, base_b, b = 1024*1024*1024*1024*1024*1024, 0.0, 0.0, 0.0, 0.0
-  first_t = -1.0
   for k in range(len(raw_data)):
     item = raw_data[k]; ty = item['type']
     if ty == "System":
@@ -80,8 +81,6 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
       bpm, base_t, base_b = float(item['bpm']), t, b
       continue
     
-    if first_t < 0.0: first_t = t
-    
     # pick idle touch
     touch = -1
     for i in range(len(avail)):
@@ -94,7 +93,7 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
       commands.append([t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       for i in range(1, FLICK_COUNT):
         commands.append([t+i*FLICK_PERIOD/FLICK_COUNT,
-          f"m {touch} {TRACK_B_X[l]} {TRACK_B_Y+FLICK_DIS*i/(FLICK_COUNT-1)}"])
+          f"m {touch} {TRACK_B_X[l]} {TRACK_B_Y-int(FLICK_DIS*i/(FLICK_COUNT-1))}"])
       commands.append([release_t, f"u {touch}"])
         
     elif ty == "Single":
@@ -110,7 +109,7 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
       commands.append([t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       for i in range(1, DIRECT_COUNT):
         commands.append([t+i*DIRECT_PERIOD/DIRECT_COUNT,
-          f"m {touch} {TRACK_B_X[l]+sgn*i*DIRECT_DIS/(DIRECT_COUNT-1)} {TRACK_B_Y}"])
+          f"m {touch} {TRACK_B_X[l]+sgn*int(i*DIRECT_DIS/(DIRECT_COUNT-1))} {TRACK_B_Y}"])
       commands.append([release_t, f"u {touch}"])
       
     elif ty == "Long":
@@ -121,7 +120,7 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
         for i in range(1, len(LFLICK_COUNT)):
           commands.append([
             release_t+i*LFLICK_PERIOD/LFLICK_COUNT,
-            f"m {touch} {TRACK_B_X[l]+i*LFLICK_DIS/(LFLICK_COUNT-1)} {TRACK_B_Y}"
+            f"m {touch} {TRACK_B_X[l]-int(i*LFLICK_DIS/(LFLICK_COUNT-1))} {TRACK_B_Y}"
           ])
         release_t += LFLICK_PERIOD
         commands.append([release_t, f"u {touch}"])
@@ -144,7 +143,7 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
         for i in range(1, SFLICK_COUNT):
           commands.append([
             release_t + i*SFLICK_PERIOD/SFLICK_COUNT,
-            f"m {touch} {TRACK_B_X[int(seq[-1]['lane'])]} {TRACK_B_Y + int(i*SFLICK_DIS/(SFLICK_COUNT-1))}"
+            f"m {touch} {TRACK_B_X[int(seq[-1]['lane'])]} {TRACK_B_Y - int(i*SFLICK_DIS/(SFLICK_COUNT-1))}"
           ])
         release_t = release_t + SFLICK_PERIOD
         commands.append([release_t, f"u {touch}"])
@@ -154,19 +153,36 @@ def sheet2commands(file_path:str, note_skewer:NoteSkewer = None):
       print(f"Unknown type of note with ty:{ty} item:{item}\n")
     avail[touch] = release_t
   commands.sort(key=lambda item:item[0])
+  
+  print(commands_path)
+  with open(commands_path, "w", encoding='utf-8') as file:
+    file.write(f"b %d\n"%(int(1000000*commands[0][0]+0.5)))
+    cur_t = -1
+    for t, cmd in commands:
+      t = int(float(t)*1000000+0.5)
+      if cur_t >= 0 and t > cur_t:
+        file.write("c\nt %d\n"%(cur_t))
+      cur_t = t
+      file.write(cmd+'\n')
+    file.write("t %d\n"%(cur_t))
+    
   return commands
       
 if __name__ == '__main__':
-  file_path = './play/fetch_one_sheet_295_4.bestdori'
+  file_path = './play/sample.bestdori'#'./play/fetch_one_sheet_295_4.bestdori'
+  commands_path = './play/commands.sheet'
   custom_performance = CustomPerformance()
-  note_skewer = NoteSkewer(custom_performance.weights_map['newbee'], Performance.DropLastCustom)
-  commands = sheet2commands(file_path, note_skewer)
+  note_skewer = None#NoteSkewer(custom_performance.weights_map['newbee'], Performance.DropLastCustom)
+  commands = sheet2commands(file_path, commands_path, note_skewer)
   
   commands_file_path = "./play/commands.json"
   with open(commands_file_path, "w", encoding="utf-8") as file:
     json.dump(commands, file)
   from utils.json_refiner import refine
   refine(commands_file_path)
+  
+  if True:
+    push_file(commands_path)
   
   
   

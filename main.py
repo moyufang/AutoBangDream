@@ -8,9 +8,7 @@ from utils.adb import *
 
 #============ adb processs ============#
 
-process = open_minitouch()
-write(process, 'mkdir /data/local/tmp/;cd /data/local/tmp/;pkill bandcheater;./bandcheater -i\n')
-clear()
+minitouch = Minitouch()
 
 #============ Windows GUI ============#
 
@@ -22,5 +20,8 @@ import configuration
 
 #============ main ============#
 
-
-
+time.sleep(1)
+# minitouch.restart_game()
+start_t = int((time.time()+2)*1000000+0.5)
+minitouch.write(f"s {start_t} {-4629663+1000000}\n")
+time.sleep(10)

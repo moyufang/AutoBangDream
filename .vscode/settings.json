@@ -10,6 +10,18 @@
     },
     "terminal.integrated.env.linux": {
         "PYTHONPATH": "${workspaceFolder}"
+    },
+    "files.associations": {
+      "*.cpp": "cpp",
+      "*.h": "cpp",
+      "*.py": "python",
+      "optional": "c",
+      "system_error": "c",
+      "array": "c",
+      "functional": "c",
+      "tuple": "c",
+      "type_traits": "c",
+      "utility": "c"
     }
 
 }
