@@ -2,7 +2,7 @@ LOCAL_PATH := $(abspath $(call my-dir))
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := evdev
+LOCAL_MODULE := libevdev
 
 LOCAL_SRC_FILES := \
     source/libevdev/libevdev.c \

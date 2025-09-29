@@ -1,0 +1,3 @@
+[submodule "bangcheater/jni/vendor/libevdev/source"]
+	path = bangcheater/jni/vendor/libevdev/source
+	url = git://anongit.freedesktop.org/libevdev
