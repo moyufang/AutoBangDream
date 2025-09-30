@@ -1,9 +1,10 @@
 from enum import Enum, auto
 import json
 import os
+import numpy as np
 
 #mumu模拟器设置的分辨率
-RAW_WIDTH, RAW_HEIGHT = 1280, 720 
+SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720 
 
 # 选歌模式
 class Choose(Enum):
@@ -142,44 +143,74 @@ class CustomPerformance:
     self.weights_map = {}
     self.save_custom()
 
-#============ play ============#
+
+#============ POS ============#
+
+TRACK_LT      = ( 160,   50)
+TRACK_RT      = (1120,   50)
+TRACK_LB      = (  80,  670)
+TRACK_RB      = (1200,  670)
+
+TRACK_T_X1    = TRACK_LT[0]
+TRACK_T_X2    = TRACK_RT[0]
+TRACK_T_Y     = TRACK_LT[1]
+TRACK_T_LEN   = TRACK_T_X2 - TRACK_T_X1
+TRACK_T_BLOCK = TRACK_T_LEN // 7
+TRACK_T_X     = [int(TRACK_T_X1+(2*i+1)*TRACK_T_LEN/14) for i in range(7)]
+TRACK_T       = [(TRACK_T_X[i], TRACK_T_Y) for i in range(7)]
+
+TRACK_B_X1    = TRACK_LB[0]
+TRACK_B_X2    = TRACK_RB[0]
+TRACK_B_Y     = TRACK_LB[1]
+TRACK_B_LEN   = TRACK_B_X2 - TRACK_B_X1
+TRACK_B_BLOCK = TRACK_B_LEN // 7
+TRACK_B_X     = [int(TRACK_B_X1+(2*i+1)*TRACK_B_LEN/14) for i in range(7)]
+TRACK_B       = [(TRACK_B_X[i], TRACK_B_Y) for i in range(7)]
+
+#============ commands ============#
 
 # 最大触点数
-MAX_TOUCH = 10
+MAX_TOUCH      = 10
 
-TRACK_LB_CORNER = (  80,  670)
-TRACK_RB_CORNER = (1200,  670)
-TRACK_LT_CORNER = ( 160,   50)
-TRACK_RT_CORNER = (1120,   50)
-TRACK_B_X1      = TRACK_LB_CORNER[0]
-TRACK_B_X2      = TRACK_RB_CORNER[0]
-TRACK_B_LEN     = TRACK_B_X2 - TRACK_B_X1
+SINGLE_PERIOD  = 0.01
 
-TRACK_B_BLOCK   = TRACK_B_LEN // 7
-TRACK_B_Y       = TRACK_LB_CORNER[1]
-TRACK_B_X       = [int(TRACK_B_X1+(2*i+1)*TRACK_B_LEN/14) for i in range(7)]
-TRACK_B         = [(TRACK_B_X[i], TRACK_B_Y) for i in range(7)]
+FLICK_BIAS     = 0.0
+FLICK_PERIOD   = 0.03
+FLICK_COUNT    = 5
+FLICK_DIS      = 30
 
-SINGLE_PERIOD   = 0.01
-
-FLICK_BIAS      = 0.0
-FLICK_PERIOD    = 0.03
-FLICK_COUNT     = 5
-FLICK_DIS       = 30
-
-DIRECT_BIAS     = 0.0
-DIRECT_PERIOD   = 0.03
-DIRECT_COUNT    = 5
-DIRECT_DIS      = 30
-
-LONG_BIAS       = 0.0
-LFLICK_PERIOD   = 0.03
-LFLICK_COUNT    = 5
-LFLICK_DIS      = 30
-
-SLIDE_BIAS      = -0.01
-SFLICK_PERIOD   = 0.02
-SFLICK_COUNT    = 5
-SFLICK_DIS      = 30
+DIRECT_BIAS    = 0.0
+DIRECT_PERIOD  = 0.03
+DIRECT_COUNT   = 5
+DIRECT_DIS     = 30
 
 MIDDLE_MIN_GAP = 0.005
+
+LONG_BIAS      = 0.0
+LFLICK_PERIOD  = 0.03
+LFLICK_COUNT   = 5
+LFLICK_DIS     = 30
+
+SLIDE_BIAS     = -0.01
+SFLICK_PERIOD  = 0.02
+SFLICK_COUNT   = 5
+SFLICK_DIS     = 30
+
+
+#============ note color & health bar color ============#
+
+HEALTH_POS = [700, 153]
+
+BLACK      , WHITE       = np.uint8([[  0,   0,   0], [255, 255, 255]])
+HEALTH_LOW , HEALTH_HIGH = np.uint8([[ 85,   5, 120], [ 92, 255, 255]])
+BLUE_LOW   , BLUE_HIGH   = np.uint8([[128,  70, 230], [138, 255, 255]])
+GREEN_LOW  , GREEN_HIGH  = np.uint8([[ 75,  85, 220], [ 88, 255, 255]])
+PINK_LOW   , PINK_HIGH   = np.uint8([[155,  80, 230], [169, 255, 255]])
+YELLOW_LOW , YELLOW_HIGH = np.uint8([[ 20, 100, 230], [ 30, 255, 255]])
+PURPLE_LOW , PURPLE_HIGH = np.uint8([[100,  70, 230], [110, 255, 255]])
+ORANGE_LOW , ORANGE_HIGH = np.uint8([[  0,  70, 230], [  6, 255, 255]])
+
+MIN_FILL_RATE   = 0.6
+MIN_PIXEL_COUNT = 20
+MIN_RATE_S      = 0.05
+MAX_RATE_S      = 0.95
