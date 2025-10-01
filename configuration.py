@@ -212,5 +212,10 @@ ORANGE_LOW , ORANGE_HIGH = np.uint8([[  0,  70, 230], [  6, 255, 255]])
 
 MIN_FILL_RATE   = 0.6
 MIN_PIXEL_COUNT = 20
-MIN_RATE_S      = 0.05
-MAX_RATE_S      = 0.95
+MIN_RATE_T      = 0.05
+MAX_RATE_T      = 0.95
+EDGE_RATE_T     = 0.9  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
+                       # 否则 ExtractFirstNote 任务会失效
+
+TAG_COLOR       = (0, 0, 255)
+TAG_RADIUS      = 10

@@ -42,7 +42,7 @@ class Grabber:
     if window_region == None: window_region = win32gui.GetWindowRect(handle)
     self.set_window(window_region, region)
     self.set_is_save(is_save, imgs_path)
-
+    self.grab_time = -1.0
   def __del__(self):
     #释放资源
     self.sdc.DeleteDC()
@@ -125,6 +125,7 @@ class Grabber:
 
     self.memdc.BitBlt((0,0), (self.width, self.height), self.sdc, (self.region[0], self.region[1]), win32con.SRCCOPY)
     arr = self.bmp.GetBitmapBits(True)
+    self.grab_time = time.time()
     img = np.frombuffer(arr, dtype='uint8')
     img.shape = (self.height, self.width, 4)
 
@@ -199,7 +200,7 @@ class MumuGrabber:
     self.set_is_save = lambda is_save, imgs_path: self.grabber.set_is_save(is_save, imgs_path)
     self.grab        = lambda img_name: self.grabber.grab(img_name)
     
-  def set_window(self, scale:int == None, window_base:list=None, std_region:list=None):
+  def set_window(self, scale:int = None, window_base:list=None, std_region:list=None):
     if scale == None and window_base == None: return False
     assert(scale == None or isinstance(scale, int))
     if window_base:
