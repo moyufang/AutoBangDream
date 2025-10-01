@@ -197,8 +197,8 @@ class MumuGrabber:
       imgs_path
     )
     
-    self.set_is_save = lambda is_save, imgs_path: self.grabber.set_is_save(is_save, imgs_path)
-    self.grab        = lambda img_name: self.grabber.grab(img_name)
+    self.set_is_save = lambda is_save, imgs_path=None: self.grabber.set_is_save(is_save, imgs_path)
+    self.grab        = lambda img_name=None: self.grabber.grab(img_name)
     
   def set_window(self, scale:int = None, window_base:list=None, std_region:list=None):
     if scale == None and window_base == None: return False

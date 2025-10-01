@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import IntFlag
 from configuration import *
 from utils.WinGrabber import *
 import cv2 as cv
@@ -6,8 +6,28 @@ from typing import Callable
 from pathlib import Path
 import time
 
+class HealthExtractor:
+  def __init__(self, grabber:MumuGrabber, is_to_hsv:bool = True):
+    self.grabber    = grabber
+    self.scale      = grabber.scale
+    self.is_to_hsv  = is_to_hsv
+    self.is_playing = False
+  def grab(self):
+    self.img = self.grabber.grab()[:,:,3]
+    if self.is_to_hsv: self.img = cv.cvtColor(self.img, cv.COLOR_BGR2HSV)
+    return self.img
+  def get_is_playing(self, hsv_img):
+    # 提取生命条位置的颜色，判断演出是否开始
+    health_pos   = [(HEALTH_POS[i]-self.gbr.std_region[i])//self.scale for i in range(2)]
+    health_color = hsv_img[health_pos[1], health_pos[0]]
+    self.is_playing   = ((HEALTH_LOW <= health_color) & (health_color <= HEALTH_HIGH)).all()
+    if not self.is_playing: # 演出未开始，无效返回
+      print("no playing, with health_pos's color:", hsv_img[health_pos[1], health_pos[0]])
+      self.is_playing = False
+    return self.is_playing
+
 class NoteExtractor:
-  class DerivePara(Enum):
+  class DerivePara(IntFlag):
     NONE   = 0    # 不修改
     ALL    = 1<<0 # 所有 note 都显示
     BLUE   = 1<<1 # 显示 single tap
@@ -26,14 +46,14 @@ class NoteExtractor:
     self.reset_extractor(is_extract_first_note)
   
   def grab(self):
-    self.img = self.grabber.grab()[:,:,3]
+    self.img = self.grabber.grab()[:,:,:3]
     if self.is_to_hsv: self.img = cv.cvtColor(self.img, cv.COLOR_BGR2HSV)
     return self.img
+  
   def get_grab_time(self):
     return self.grabber.grabber.grab_time
   
   def reset_extractor(self, is_extract_first_note):
-    self.is_playing = False
     self.is_extract_first_note = is_extract_first_note
     
   # 提取 note，完成三个任务
@@ -46,16 +66,6 @@ class NoteExtractor:
   def extract(self, hsv_img, derive_para:DerivePara):
     gbr               = self.grabber
     scale             = gbr.scale
-    health_pos        = [(HEALTH_POS[i]-gbr.std_region[i])//scale for i in range(2)]
-    health_color      = hsv_img[health_pos[1], health_pos[0]]
-    is_playing        = ((HEALTH_LOW <= health_color) & (health_color <= HEALTH_HIGH)).all()
-    if not self.is_playing and is_playing:
-      self.is_playing = True
-      self.first_note_t_s = [(-1.0, -2.0)]
-    if not is_playing: # 演出未开始，无效返回
-      print("no playing, with health_pos's color:", hsv_img[health_pos[1], health_pos[0]])
-      self.is_playing = False
-      return None, None
     
     mask = [
       None,
@@ -70,16 +80,15 @@ class NoteExtractor:
     mask[0] = mask[1]
     for i in range(2, 7): mask[0] = mask[0] | mask[i]
     
-    A1    = (TRACK_B_X1 - TRACK_B_X1)//scale
-    A2    = (TRACK_B_X2 - TRACK_B_X1)//scale
-    B1    = (TRACK_T_X1 - TRACK_B_X1)//scale
-    B2    = (TRACK_T_X2 - TRACK_B_X1)//scale
-    C1    = (TRACK_T_Y  - TRACK_T_Y )//scale
-    C2    = (TRACK_B_Y  - TRACK_T_Y )//scale
-    A,B   = (A1 + A2)//2,   (B1 + B2)//2
-    a,b,h = (A2 -  A)   ,   (B2 -  B)   ,   (C2 - C1)
+    A1,A2 = (TRACK_B_X1 - TRACK_B_X1)//scale, (TRACK_B_X2 - TRACK_B_X1)//scale
+    B1,B2 = (TRACK_T_X1 - TRACK_B_X1)//scale, (TRACK_T_X2 - TRACK_B_X1)//scale
+    C1,C2 = (TRACK_T_Y  - TRACK_T_Y )//scale, (TRACK_B_Y  - TRACK_T_Y )//scale
+    a,b,h = (A2 - A1)//2   ,(B2 - B1)//2,   (C2 - C1)
+    A,B,C = (A1 + A2)//2+(TRACK_B_X1-gbr.std_region[0])//scale,\
+            (B1 + B2)//2+(TRACK_T_X1-gbr.std_region[0])//scale,\
+            (TRACK_T_Y - gbr.std_region[1])//scale
     
-    print("(A1,A2):(%4d,%4d) (B1,B2):(%4d,%4d) (A,B):(%4d,%4d) (a,b,h):(%4d,%4d)",A1,A2,B1,B2,A,B,a,b,h)
+    #print("(A1,A2):(%4d,%4d) (B1,B2):(%4d,%4d) (A,B,C):(%4d,%4d,%4d) (a,b,h):(%4d,%4d,%4d)"%(A1,A2,B1,B2,A,B,C,a,b,h))
 
     # 过滤出可靠 note，效果对参数(mask颜色、FILL_RATE、PIXEL_COUNT、RATE_S)和游戏渲染环境强依赖
     max_t_s = [-0.1, -0.2]
@@ -89,11 +98,11 @@ class NoteExtractor:
     for i in range(1,retval):
       sta       = stats[i]
       cen       = np.int32(centroids[i])
-      x,y       = cen[0]-A, cen[1]-C1
-      t,s       = y/h     , x*h/((a-b)*y+b)
+      x,y       = cen[0]-A, cen[1]-C
+      t,s       = y/h     , x*h/((a-b)*y+b*h)
       fill_rate = sta[4]/(sta[2]*sta[3])
       
-      is_avail        = fill_rate >=  MIN_FILL_RATE and sta[4] >= MIN_PIXEL_COUNT
+      is_avail        = fill_rate >=  MIN_FILL_RATE and sta[4] >= MIN_PIXEL_COUNT and fill_rate <= MAX_FILL_RATE
       is_considerable =         t >=     MIN_RATE_T and      t <=      MAX_RATE_T
       if is_avail and is_considerable:
         centroid_to_tag_list.append(cen)
@@ -110,7 +119,7 @@ class NoteExtractor:
       derive_img = hsv_img
     else:
       for i in range(1, 6): mask[i] = mask[i] | mask[0]
-      mask[7] = cv.bitwise_not(mask)
+      mask[7] = cv.bitwise_not(mask[0])
       derive_mask = np.zeros_like(mask[0])
       if (derive_para & NoteExtractor.DerivePara.ALL) > 0:
           derive_mask |= mask[0]
@@ -129,14 +138,6 @@ class NoteExtractor:
     
     return derive_img, t_s_list # 任务（1）（2）出口
 
-class Mode(Enum):
-  Capture          = auto()
-  Record           = auto()
-  RecordNote       = auto()
-  ExtractFirstNote = auto()
-  WalkThrough      = auto()
-  WalkThroughSheet = auto()
-  
 class Preview:
   img_type = {
     'bgr' : None,
@@ -149,10 +150,10 @@ class Preview:
     'hls' : cv.COLOR_HLS2BGR
   }
   
-  def __init__(self, mode:Mode, key2func:dict, window_name:str='Preview'):
-    self.key2func = key2func.copy()
+  def __init__(self, display_scale:int=1, window_name:str='Preview'):
     self.window_name = window_name
     self.img, self.mouse_x, self.mouse_y = None, -1, -1
+    self.display_scale = display_scale
     mouse_callback = lambda e, x, y, f, p: self.mouse_callback(e, x, y, f, p)
     cv.namedWindow(self.window_name)
     cv.setMouseCallback(self.window_name, mouse_callback)
@@ -164,19 +165,21 @@ class Preview:
     
   def mouse_callback(self, event, x, y, flags, param):
     self.mouse_x, self.mouse_y = x, y
+    x, y = x//self.display_scale, y//self.display_scale
     if event == cv.EVENT_MOUSEMOVE and self.img is not None:
       # 确保坐标在图像范围内
       if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
         color = self.img[y, x]
-        print("(x,y):(%4d, %4d) color:" % (x, y) + str(color))
+        print("(x,y):(%4d, %4d) color:" % (x, y) + str(color)+f" type:{self.type}")
         
   def load_img(self, img:str|cv.Mat, ty:str=None):
     self.type = ty
     
     if isinstance(img, str):
-      assert(os.path.exist(img))
+      assert(os.path.exists(img))
       self.img = cv.imread(img)
-      assert(self.img != None)
+      print("img:", img, " self.img:", self.img.shape if img is not None else None)
+      assert(self.img is not None)
       
       if self.type in Preview.img_type: pass
       elif img.ndim == 2: self.type = 'gray'
@@ -190,10 +193,17 @@ class Preview:
       print("Loading img failed: Unknown img.")
       
     if self.type not in Preview.img_type: self.type = 'unknown'
-    print(f"Loading img succeeded with type:\"{type}\" shape:{self.img.shape} type:{self.type}")
+    # print(f"Loading img succeeded with type:\"{self.type}\" shape:{self.img.shape} type:{self.type}")
     
   def show_img(self):
-    cv.imshow(self.window_name, self.img, Preview.img_type[self.type])
+    if self.display_scale != 1:
+      img = cv.resize(src=self.img, dsize=None, fx=self.display_scale, fy=self.display_scale, interpolation=cv.INTER_CUBIC)
+    else:
+      img = self.img
+    if self.type in Preview.img_type:
+      cv.imshow(self.window_name, cv.cvtColor(img, Preview.img_type[self.type]))
+    else:
+      cv.imshow(self.window_name, img)
   
   # def add_key_func_pair_on_mode(self, key:str, func:Callable, mode:Mode=None):
   #   if mode == None: mode = self.mode
@@ -209,113 +219,162 @@ class Preview:
   #   while True:
   #     if self.loop_func() == -1: break
 
+SCALE = 2
+
 # 自定义运行时参数
+
 is_save        = False            # 是否保存帧
 frame_id_start = 0                # 帧ID起始值
 frame_id       = frame_id_start   # 帧ID
-frames_path    = './play/frames/' # 帧保存路径
-frame_name     = 'f%05d'
-derive_para    = NoteExtractor.DerivePara.ALL |\
-                 NoteExtractor.DerivePara.TAG
-note_track_path = './play/note_track.json'
-mode = Mode.WalkThrough
+frames_path    = './play/frames_two/' # 帧保存路径
+frame_name     = 'f%05d.png'
+frame_list     = []
+
+derive_para    = 0
+for tag in [
+  NoteExtractor.DerivePara.ALL,
+  NoteExtractor.DerivePara.TAG,
+  # NoteExtractor.DerivePara.NOBG,
+]: derive_para |= tag
+
+is_extractor_use_full = False
+is_extract_first_note = False
+min_grab_gap          = 0.0
+
+trace_note_path       = './play/trace_note.json'
+trace_first_note_path = './play/trace_first_note.json'
+
+mode = Mode.TraceNote
 # 自定义运行时参数
 
 full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None)
 track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
-extractor     = NoteExtractor(track_grabber, False)
-pv = Preview(mode, {})
-def q(): del pv
+extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
+pv = Preview(mode, 2)
+def q(): global pv; del pv
+def save(img):
+  global frame_id
+  img_path = frames_path + frame_name%frame_id
+  frame_id += 1
+  cv.imwrite(img_path, img)
+  print(f"Save img to \"{img_path}\"")
+def gss(img:None): # grab-show-save
+  img = extractor.grab() if img is None else img
+  pv.load_img(img, 'hsv')
+  pv.show_img()
+  save(cv.cvtColor(img, cv.COLOR_HSV2BGR))
+
 if mode == Mode.WalkThrough or mode == Mode.WalkThroughSheet:
-  frame_list = []
-  for file in Path(frames_path).rglob("*.png"):
-    frame_list.append(file.__str__)
-  frame_list_cur = 0
+  
+  if frame_list == []:
+    frame_list = []
+    for file in Path(frames_path).rglob("*.png"):
+      frame_list.append(file.__str__())
+    frame_list_cur = 0
+  else:
+    frame_id_list = frame_list
+    frame_list = []
+    for i in frame_id_list:
+      frame_list.append(frames_path+frame_name%i)
+    frame_list_cur = 0
   
   if mode == Mode.WalkThroughSheet:
     def show_img():
-      img = cv.imread(frame_list[frame_list_cur], cv.IMREAD_COLOR_RGB)
-      img = cv.cvtColor(img, cv.COLOR_RGB2HSV)
-      pv.load_img(extractor.extract(img, derive_para), 'hsv')
+      cv.setWindowTitle(pv.window_name, frame_list[frame_list_cur])
+      img = cv.imread(frame_list[frame_list_cur])
+      img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+      pv.load_img(extractor.extract(img, derive_para)[0], 'hsv')
       pv.show_img()
   else:
     def show_img():
-      pv.load_img(frame_list[frame_list_cur], 'hsv')
+      cv.setWindowTitle(pv.window_name, frame_list[frame_list_cur])
+      pv.load_img(frame_list[frame_list_cur], 'bgr')
       pv.show_img()
   def a():
+    global frame_list_cur
     if frame_list_cur > 0: frame_list_cur -= 1
     else: frame_list_cur = len(frame_list) - 1
     show_img()
   def b():
+    global frame_list_cur
     if frame_list_cur < len(frame_list)-1: frame_list_cur += 1
     else: frame_list_cur = 0
     show_img() 
   
+  show_img()
   while True:
-    k = cv.waitKey(0) & 0xFF
+    k = cv.waitKey(16) & 0xFF
     if k == ord('q'): q(); break
     elif k == ord('a'): a()
     elif k == ord('b'): b()
 
 elif mode == Mode.Record or mode == Mode.Capture:
+  is_recording = False
   while True:
-    is_recording = False
-    if is_recording:
-      img = full_grabber.grab()
-      pv.load_img(cv.cvtColor(img, cv.COLOR_BGR2HSV), 'hsv')
-      pv.show_img()
-    def c():
-      img = full_grabber.grab()
-      pv.load_img(cv.cvtColor(img, cv.COLOR_BGR2HSV), 'hsv')
-      pv.show_img()
-      if is_save:
-        img_path = frames_path + frame_name%frame_id
-        cv.imwrite(img_path, full_grabber.grab())
+    img = full_grabber.grab()
+    pv.load_img(cv.cvtColor(img, cv.COLOR_BGR2HSV), 'hsv')
+    pv.show_img()
+    if is_recording: save(img)
+    
     k = cv.waitKey(16) & 0xFF
     if k == ord('q'): q(); break
-    elif k == ord('c'): c()
-    elif k == ord('s'): is_recording = True
-    elif k == ord('e'): is_recording = False
+    elif k == ord('c'):
+      if not is_recording: save(img)
+    elif k == ord('s'): print("Start recording"); is_recording = True
+    elif k == ord('e'): print("End recording"); is_recording = False
     
-elif mode == Mode.RecordNote:
+elif mode == Mode.TraceNote:
   is_recording = False
-  def e():
-    with open(note_track_path, 'w', 'utf-8') as file:
-      json.dump(super_t_s_list, file)
-    super_t_s_list = []
-    
+  
+  lst_time = time.time()
   while True:
     k = cv.waitKey(16) & 0xFF
     if is_recording:
+      while time.time() < lst_time+min_grab_gap: pass
+      lst_time = time.time()
       img = extractor.grab()
       tim = extractor.get_grab_time()
       derive_img, t_s_list = extractor.extract(img, derive_para)
-      super_t_s_list.append([tim, t_s_list])
+      if t_s_list != []:
+        super_t_s_list.append([tim-start_time, t_s_list])
+      if is_save: gss(img)
+        
     if k == ord('q'): q(); break
-    elif k == ord('s'): is_recording = True; super_t_s_list = []; extractor.reset_extractor(False)
-    elif k == ord('e'): is_recording = False; e()
+    elif k == ord('c'):
+      if not is_recording: gss()
+    elif k == ord('s'):
+      is_recording = True
+      super_t_s_list = []
+      extractor.reset_extractor(False)
+      start_time = time.time()
+      print("Start tracing note ...")
+    elif k == ord('e'):
+      is_recording = False; 
+      with open(trace_note_path, 'w', encoding='utf-8') as file:
+        json.dump(super_t_s_list, file)
+      print(f"End tracing note, file saved to \"{trace_note_path}\"")
     
-elif mode == Mode.ExtractFirstNote:
+elif mode == Mode.TraceFirstNote:
   is_recording = False
   while True:
     if is_recording:
       img = extractor.grab()
-      tim = extractor.get_grab_time()
+      tim = extractor.get_grab_time() 
       derive_img, t_s, is_edge = extractor.extract(img, derive_para)
+      if is_save: gss(img)
       if is_edge:
         is_recording = False
         print(first_note_t_s_list)
-      else:
-        first_note_t_s_list.append([tim, t_s])
+        with open(trace_first_note_path, 'w', encoding='utf-8') as file:
+          json.dump(first_note_t_s_list, file)
+        print(f"End tracing first note, file saved to \"{trace_first_note_path}\"")
+      elif t_s != [] and t_s[0] >= 0.0:
+        first_note_t_s_list.append([tim - start_time, t_s])
     k = cv.waitKey(16) & 0xFF
     if k == ord('q'): q(); break
     elif k == ord('s'):
       is_recording = True
       first_note_t_s_list = []
       extractor.reset_extractor(True)
-    elif k == ord('e'): is_recording = False
-  
-#pv.add_key_func_pair_on_mode('a')
-
-
-
+      start_time = time.time()
+      print("Start tracing first note ...")

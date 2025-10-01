@@ -143,13 +143,12 @@ class CustomPerformance:
     self.weights_map = {}
     self.save_custom()
 
-
 #============ POS ============#
 
-TRACK_LT      = ( 160,   50)
-TRACK_RT      = (1120,   50)
-TRACK_LB      = (  80,  670)
-TRACK_RB      = (1200,  670)
+TRACK_LT      = ( 474,  180)
+TRACK_RT      = ( 804,  180)
+TRACK_LB      = ( 120,  580)
+TRACK_RB      = (1160,  580)
 
 TRACK_T_X1    = TRACK_LT[0]
 TRACK_T_X2    = TRACK_RT[0]
@@ -199,23 +198,24 @@ SFLICK_DIS     = 30
 
 #============ note color & health bar color ============#
 
-HEALTH_POS = [700, 153]
+HEALTH_POS = [1080, 32]
 
 BLACK      , WHITE       = np.uint8([[  0,   0,   0], [255, 255, 255]])
-HEALTH_LOW , HEALTH_HIGH = np.uint8([[ 85,   5, 120], [ 92, 255, 255]])
-BLUE_LOW   , BLUE_HIGH   = np.uint8([[128,  70, 230], [138, 255, 255]])
-GREEN_LOW  , GREEN_HIGH  = np.uint8([[ 75,  85, 220], [ 88, 255, 255]])
-PINK_LOW   , PINK_HIGH   = np.uint8([[155,  80, 230], [169, 255, 255]])
-YELLOW_LOW , YELLOW_HIGH = np.uint8([[ 20, 100, 230], [ 30, 255, 255]])
-PURPLE_LOW , PURPLE_HIGH = np.uint8([[100,  70, 230], [110, 255, 255]])
-ORANGE_LOW , ORANGE_HIGH = np.uint8([[  0,  70, 230], [  6, 255, 255]])
+HEALTH_LOW , HEALTH_HIGH = np.uint8([[ 53, 150, 150], [ 65, 160, 255]]) #
+BLUE_LOW   , BLUE_HIGH   = np.uint8([[125,  70, 230], [140, 200, 255]]) #
+GREEN_LOW  , GREEN_HIGH  = np.uint8([[ 70,  90, 220], [ 85, 180, 255]]) #
+PINK_LOW   , PINK_HIGH   = np.uint8([[150,  80, 230], [170, 200, 255]]) #
+YELLOW_LOW , YELLOW_HIGH = np.uint8([[ 20, 120, 230], [ 30, 255, 255]]) #
+PURPLE_LOW , PURPLE_HIGH = np.uint8([[100, 150, 250], [110, 255, 255]]) #
+ORANGE_LOW , ORANGE_HIGH = np.uint8([[  0,  85, 240], [ 10, 200, 255]]) #
 
-MIN_FILL_RATE   = 0.6
-MIN_PIXEL_COUNT = 20
-MIN_RATE_T      = 0.05
-MAX_RATE_T      = 0.95
-EDGE_RATE_T     = 0.9  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
+MIN_FILL_RATE   = 0.40
+MAX_FILL_RATE   = 0.95
+MIN_PIXEL_COUNT = 45
+MIN_RATE_T      = 0.025
+MAX_RATE_T      = 0.9
+EDGE_RATE_T     = 0.70 # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
                        # 否则 ExtractFirstNote 任务会失效
 
-TAG_COLOR       = (0, 0, 255)
-TAG_RADIUS      = 10
+TAG_COLOR       = [0, 255, 255]
+TAG_RADIUS      = 3
