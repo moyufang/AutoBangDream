@@ -213,9 +213,9 @@ MIN_FILL_RATE   = 0.40
 MAX_FILL_RATE   = 0.95
 MIN_PIXEL_COUNT = 45
 MIN_RATE_T      = 0.025
-MAX_RATE_T      = 0.9
-EDGE_RATE_T     = 0.70 # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
-                       # 否则 ExtractFirstNote 任务会失效
+MAX_RATE_T      = 1.0
+EDGE_RATE_T     = 0.9  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
+                        # 否则 ExtractFirstNote 任务会失效
 
 TAG_COLOR       = [0, 255, 255]
 TAG_RADIUS      = 3
