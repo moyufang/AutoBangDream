@@ -50,9 +50,10 @@ char commands_file_path[256];
 long long cur_time = 0;
 long long start_time;
 long long shift_time = 0;
+long long correction_time;
+long long dilation_time = 1000000ll;
 int first_beat_time;
 int predict_time;
-int correction_time;
 
 static int consider_device(const char* devpath){
     if ((fd = open(devpath, O_RDWR)) < 0){
@@ -142,7 +143,10 @@ static void start_player(int right_now){
     clock_gettime(CLOCK_REALTIME, &now);
     t = now.tv_sec*1000000ll+now.tv_nsec/1000-here_first_beat_time;
     TimePoint *tp;
-    while (time_cursor < time_top && t > (tp = &(time_list[time_cursor]))->time){
+    while(
+      time_cursor < time_top && 
+      t > ((tp = &(time_list[time_cursor]))->time*dilation_time)/1000000ll
+    ){
       // LogD("run cmds t:%d time_cursor:%d p:%d opt_cursor:%d\n", t, time_cursor, tp->cursor, opt_cursor);
       p = tp->cursor;
       while(opt_cursor < p){
@@ -186,7 +190,7 @@ static void read_commands(FILE* input){
       case 't': // SYN TIME
         fscanf(input, "%d", &t);
         time_list[time_top].time = t-first_beat_time;
-        time_list[time_top].time = (time_list[time_top].time*10022ll)/10000;
+        time_list[time_top].time = time_list[time_top].time;
         // LogD("t:%d -> %d\n", t, time_list[time_top].time);
         time_list[time_top++].cursor = opt_top;
         break;
@@ -271,6 +275,7 @@ static int parse_input(const char* buffer){
       long long rcv_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
       long long snd_time = strtoll(cursor, &cursor, 10);
       correction_time = strtoll(cursor, &cursor, 10);
+      dilation_time = strtoll(cursor, &cursor, 10);
       shift_time = rcv_time - snd_time;
       start_time = snd_time;
       LogR("Synchronize time:\tsnd_time:%lld rcv_time:%lld\tshift_time:%lld correction_time:%d\n", snd_time, rcv_time, shift_time, correction_time);

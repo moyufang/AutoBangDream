@@ -220,3 +220,7 @@ EDGE_RATE_T     = 0.7  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 
 
 TAG_COLOR       = [0, 255, 255]
 TAG_RADIUS      = 3
+
+#============ calibration ============#
+CORECTION_TIME = 1900000
+DILATION_TIME  = 1002000 # DILATION_TIME/1000000
