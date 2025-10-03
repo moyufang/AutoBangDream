@@ -171,30 +171,31 @@ TRACK_B       = [(TRACK_B_X[i], TRACK_B_Y) for i in range(7)]
 # 最大触点数
 MAX_TOUCH      = 10
 
-SINGLE_PERIOD  = 0.01
+SINGLE_PERIOD  = 0.02
 
 FLICK_BIAS     = 0.0
-FLICK_PERIOD   = 0.03
+FLICK_PERIOD   = 0.08
 FLICK_COUNT    = 5
-FLICK_DIS      = 30
+FLICK_DIS      = 100
 
 DIRECT_BIAS    = 0.0
-DIRECT_PERIOD  = 0.03
-DIRECT_COUNT   = 5
-DIRECT_DIS     = 30
+DIRECT_PERIOD  = 0.05
+DIRECT_COUNT   = 7
+DIRECT_DIS     = 100
 
 MIDDLE_MIN_GAP = 0.005
 
 LONG_BIAS      = 0.0
-LFLICK_PERIOD  = 0.03
+LONG_RELEASE   = 0.01
+LFLICK_PERIOD  = 0.08
 LFLICK_COUNT   = 5
-LFLICK_DIS     = 30
+LFLICK_DIS     = 100
 
 SLIDE_BIAS     = -0.01
-SFLICK_PERIOD  = 0.02
+SLIDE_RELEASE   = 0.01
+SFLICK_PERIOD  = 0.08
 SFLICK_COUNT   = 5
-SFLICK_DIS     = 30
-
+SFLICK_DIS     = 100
 
 #============ note color & health bar color ============#
 
@@ -213,8 +214,8 @@ MIN_FILL_RATE   = 0.40
 MAX_FILL_RATE   = 0.95
 MIN_PIXEL_COUNT = 45
 MIN_RATE_T      = 0.025
-MAX_RATE_T      = 1.0
-EDGE_RATE_T     = 0.9  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
+MAX_RATE_T      = 0.9
+EDGE_RATE_T     = 0.7  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 dt
                         # 否则 ExtractFirstNote 任务会失效
 
 TAG_COLOR       = [0, 255, 255]

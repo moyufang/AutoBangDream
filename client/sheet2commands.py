@@ -1,6 +1,6 @@
 from configuration import *
 from numpy import random as rd
-from utils.adb import push_file
+from utils.ADB import push_file
 
 # 根据 weights 和 performance，确定每个 note 是否产生时移，以及产生时移的幅度
 # 关键函数 get_skew 用 _get_skew 实现了多态，便于后续更新策略
@@ -104,7 +104,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
         
     elif ty == "Directional":
       t += note_skewer.get_skew()
-      sgn = 1 if item['direction'] == 'right' else -1 
+      sgn = 1 if item['direction'] == 'Right' else -1 
       release_t = t+DIRECT_PERIOD
       commands.append([t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       for i in range(1, DIRECT_COUNT):
@@ -125,13 +125,14 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
         release_t += LFLICK_PERIOD
         commands.append([release_t, f"u {touch}"])
       else:
+        release_t += LONG_RELEASE
         commands.append([release_t, f"u {touch}"])
         
     elif ty == "Slide":
       record_t = t+note_skewer.get_skew()
       release_t = t+(seq[-1]['beat']-b)*60/bpm
       commands.append([record_t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
-      for i in range(1, len(seq)-1):
+      for i in range(1, len(seq)):
         seq_item = seq[i]
         record_t = max(record_t+MIDDLE_MIN_GAP, t + (seq_item['beat']-b)*60/bpm + note_skewer.get_skew())
         commands.append([
@@ -148,6 +149,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
         release_t = release_t + SFLICK_PERIOD
         commands.append([release_t, f"u {touch}"])
       else:
+        release_t += SLIDE_RELEASE
         commands.append([release_t, f"u {touch}"])
     else:
       print(f"Unknown type of note with ty:{ty} item:{item}\n")
@@ -161,21 +163,24 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
     for t, cmd in commands:
       t = int(float(t)*1000000+0.5)
       if cur_t >= 0 and t > cur_t:
-        file.write("c\nt %d\n"%(cur_t))
+        file.write("t %d\n"%(cur_t))
       cur_t = t
       file.write(cmd+'\n')
     file.write("t %d\n"%(cur_t))
     
   return commands
-      
+
+# 306 Savior Of Songs
+# 85 ハッピーシンセサイザ
+
 if __name__ == '__main__':
-  file_path = './play/sample.bestdori'#'./play/fetch_one_sheet_295_4.bestdori'
-  commands_path = './play/commands.sheet'
+  file_path = './sheet/sheets/689_4.bestdori'#'./play/sample.bestdori'#'./play/fetch_one_sheet_295_4.bestdori'
+  commands_path = './client/commands.sheet'
   custom_performance = CustomPerformance()
   note_skewer = None#NoteSkewer(custom_performance.weights_map['newbee'], Performance.DropLastCustom)
   commands = sheet2commands(file_path, commands_path, note_skewer)
   
-  commands_file_path = "./play/commands.json"
+  commands_file_path = "./client/commands.json"
   with open(commands_file_path, "w", encoding="utf-8") as file:
     json.dump(commands, file)
   from utils.json_refiner import refine

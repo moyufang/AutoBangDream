@@ -13,16 +13,17 @@ class HealthExtractor:
     self.is_to_hsv  = is_to_hsv
     self.is_playing = False
   def grab(self):
-    self.img = self.grabber.grab()[:,:,3]
+    self.img = self.grabber.grab()[:,:,:3]
     if self.is_to_hsv: self.img = cv.cvtColor(self.img, cv.COLOR_BGR2HSV)
     return self.img
-  def get_is_playing(self, hsv_img):
+  def get_is_playing(self, hsv_img:cv.Mat|None=None):
+    if hsv_img == None: hsv_img = self.grab()
     # 提取生命条位置的颜色，判断演出是否开始
-    health_pos   = [(HEALTH_POS[i]-self.gbr.std_region[i])//self.scale for i in range(2)]
+    health_pos   = [(HEALTH_POS[i]-self.grabber.std_region[i])//self.scale for i in range(2)]
     health_color = hsv_img[health_pos[1], health_pos[0]]
     self.is_playing   = ((HEALTH_LOW <= health_color) & (health_color <= HEALTH_HIGH)).all()
     if not self.is_playing: # 演出未开始，无效返回
-      print("no playing, with health_pos's color:", hsv_img[health_pos[1], health_pos[0]])
+      #print("no playing, with health_pos's color:", hsv_img[health_pos[1], health_pos[0]])
       self.is_playing = False
     return self.is_playing
 

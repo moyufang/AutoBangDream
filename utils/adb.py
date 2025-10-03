@@ -2,11 +2,12 @@ import time
 import subprocess
 import os
 
-class Minitouch:
+class ADB:
   def __init__(self, commands='./commands.sheet'):
     self.open_minitouch(commands)
   def open_minitouch(self, commands='./commands.sheet'):
-    command = ['adb', 'shell']
+    os.system("adb connect 127.0.0.1:7555")
+    command = ['adb', '-s', "127.0.0.1:7555", 'shell']
     self.p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
     self.p.stdin.write(
       f'mkdir /data/local/tmp/;cd /data/local/tmp/;pkill bangcheater;./bangcheater {commands}\n'.encode())
@@ -47,5 +48,5 @@ def push_file(file_path:str, target_path:str='/data/local/tmp/'):
   if not os.path.exists(file_path):
     print(f"'{file_path}' does\'t exisit, drop pushing")
     return False
-  os.system("adb push \"%s\" \"%s\""%(os.path.abspath(file_path), target_path))
+  os.system("adb -s 127.0.0.1:7555 push \"%s\" \"%s\""%(os.path.abspath(file_path), target_path))
   

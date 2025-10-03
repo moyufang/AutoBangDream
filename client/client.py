@@ -3,8 +3,8 @@ import time
 
 from configuration import *
 
-from utils.WinGraber import *
-from utils.adb import *
+from utils.WinGrabber import *
+from utils.ADB import *
 
 # #============ adb processs ============#
 
@@ -25,4 +25,3 @@ from utils.adb import *
 
 full_grabber = MumuGrabber('MuMu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None, False)
 width, height = full_grabber.width, full_grabber.height
-l

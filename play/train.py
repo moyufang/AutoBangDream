@@ -161,10 +161,13 @@ if __name__ == "__main__":
 
   compare(first_note_datas, merge_datas, coefficients_v1, coefficients_v2)
 
-  base_v1 = fit_function(0, *coefficients_v1)
-  base_v2 = fit_function(0, *coefficients_v2)
+  base_v1 = fit_function(1, *coefficients_v1)
+  base_v2 = fit_function(1, *coefficients_v2)
   coefficients_v1[0] -= base_v1
   coefficients_v2[0] -= base_v2
+  for i in [0, 1, 3]:
+    coefficients_v1[i] *= -1
+    coefficients_v2[i] *= -1
   with open(coefficients_path, 'w', encoding='utf-8') as file:
     json.dump({
       "v1": coefficients_v1,
