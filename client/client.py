@@ -1,27 +1,9 @@
-import subprocess
-import time
-
+from UI_recognition.predict import BangUI
+from utils.WinGrabber import MumuGrabber
 from configuration import *
 
-from utils.WinGrabber import *
-from utils.ADB import *
+log_imgs_path = './log_imgs/'
 
-# #============ adb processs ============#
+bang_ui = BangUI()
 
-# minitouch = Minitouch()
 
-# #============ configuration ============#
-# import configuration
-
-# #============ main ============#
-
-# time.sleep(1)
-# # minitouch.restart_game()
-# start_t = int((time.time()+2)*1000000+0.5)
-# minitouch.write(f"s {start_t} {-4629663+1000000}\n")
-# time.sleep(10)
-
-#============ MumuGraber ============#
-
-full_grabber = MumuGrabber('MuMu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None, False)
-width, height = full_grabber.width, full_grabber.height

@@ -3,7 +3,7 @@ import torch as th
 
 class BangUI:
   def __init__(self):
-    with open("./UI_recognition/BangUINet_train_imgs/BangUINet_label2str.json", "r") as file:
+    with open("./UI_recognition/BangUINet_label2str.json", "r") as file:
       self.label2str = json.load(file)
 
     self.model_path = './UI_recognition/BangUiNet.pth'

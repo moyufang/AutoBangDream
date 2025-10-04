@@ -37,7 +37,7 @@ class Preview:
       # 确保坐标在图像范围内
       if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
         color = self.img[y, x]
-        print("(x,y):(%4d, %4d) color:" % (x, y) + str(color)+f" type:{self.type}")
+        print("(x,y):(%4d, %4d)|(%4d,%4d) color:" % (x, y, x*self.display_scale, y*self.display_scale) + str(color)+f" type:{self.type}")
         
   def load_img(self, img:str|cv.Mat, ty:str=None):
     self.type = ty
@@ -85,7 +85,7 @@ SCALE = 2
 is_save        = False                # 是否保存帧
 frame_id_start = 0                    # 帧ID起始值
 frame_id       = frame_id_start       # 帧ID
-frames_path    = './play/frames/'     # 帧保存路径
+frames_path    = './UI_recognition/BangUINet_train_imgs/'     # 帧保存路径
 frame_name     = 'f%05d.png'
 frame_list     = []                   # 在 WalkThrough 和 WalkThroughSheet 模式下，指定待查看的图片程 frame_id
                                       # 为空列表时，则抓取 frames_path 下所有 png 图片
@@ -104,15 +104,17 @@ trace_note_path       = \
 trace_first_note_path = \
   './play/trace_first_note.json'      # ExtractFirstNote 模式下，结果的保存地址
 
-mode = Mode.TraceFirstNote            # 选择模式
+mode = Mode.WalkThrough            # 选择模式
 
 # 计算得到的参数
 is_extract_first_note = mode == Mode.TraceFirstNote  # 选择 提取第一个 note，ExtractFirstNote 专用
 
-full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None)
-track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
-extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
-pv = Preview(2)
+if mode != Mode.WalkThrough and mode != Mode.WalkThroughSheet:
+  full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None)
+  track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
+  extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
+else: full_grabber, track_grabber, extractor = None, None, None
+pv = Preview(8)
 def q(): global pv; del pv
 def save(img):
   global frame_id

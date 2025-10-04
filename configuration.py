@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum, auto, IntFlag
 import json
 import os
 import numpy as np
@@ -6,12 +6,17 @@ import numpy as np
 #mumu模拟器设置的分辨率
 SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720 
 
-# 选歌模式
-class Choose(Enum):
-  Loop           = auto() #单曲循环
-  Random         = auto() #随机选曲
-  ListUp         = auto() #列表循环，向上（目前未支持到头时自动回到底部）
-  ListDowm       = auto() #列表循环，向下（目前未支持到底时自动回到顶部）
+# 演出模式
+class Mode(Enum):
+  Free           = auto() # 自由演出
+  Collaborate    = auto() # 协力演出
+  Stage          = auto() # 舞台挑战
+  Event          = auto() # 活动演出(Mission   -> 协力演出
+                          #         Trial     -> 协力演出
+                          #         Challenge -> 挑战演出
+                          #         Tour      -> 巡回演出
+                          #         Team      -> 团队竞演
+                          #         Compete   -> 竞演演出)
 
 # 活动种类
 class Event(Enum):
@@ -22,20 +27,16 @@ class Event(Enum):
   Team           = auto() # 团队竞演活动
   Compete        = auto() # 竞演活动
 
-# 演出模式
-class Mode(Enum):
-  Free           = auto() # 自由演出
-  Collaborate    = auto() # 协力演出
-  Challenge      = auto() # 舞台挑战
-  Event          = auto() # 活动演出(Mission   -> 协力演出
-                          #         Trial     -> 协力演出
-                          #         Challenge -> 挑战演出
-                          #         Tour      -> 巡回演出
-                          #         Team      -> 团队竞演
-                          #         Compete   -> 竞演演出)
+# 选歌模式
+class Choose(Enum):
+  Loop           = auto() # 单曲循环
+  Random         = auto() # 随机选曲
+  ListUp         = auto() # 列表循环，向上（目前未支持到头时自动回到底部）
+  ListDowm       = auto() # 列表循环，向下（目前未支持到底时自动回到顶部）
+  No             = auto() # 不指定选曲
 
 # 选曲难度
-class Level(Enum):
+class Level(IntFlag):
   Easy           = 0
   Normal         = 1
   Hard           = 2
@@ -224,3 +225,9 @@ TAG_RADIUS      = 3
 #============ calibration ============#
 CORECTION_TIME = 1900000
 DILATION_TIME  = 1002000 # DILATION_TIME/1000000
+
+#============ script ============#
+
+CLICK_PERIOD     = 0.05
+CLICK_GAP        = 0.1
+INCASE_DELAY_GAP = 0.5
