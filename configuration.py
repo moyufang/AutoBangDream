@@ -2,6 +2,7 @@ from enum import Enum, auto, IntFlag
 import json
 import os
 import numpy as np
+from numpy import random as rd
 
 #mumu模拟器设置的分辨率
 SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720 
@@ -143,6 +144,75 @@ class CustomPerformance:
   def clear_custom(self):
     self.weights_map = {}
     self.save_custom()
+    
+# 根据 weights 和 performance，确定每个 note 是否产生时移，以及产生时移的幅度
+# 关键函数 get_skew 用 _get_skew 实现了多态，便于后续更新策略
+class NoteSkewer:
+  def __init__(self, weights:list=None, performance:Performance=Performance.AllPerfect):
+    self.performance2bias = {
+      Note.Perfect : [0.0],
+      Note.Great   : [-0.032, 0.032],
+      Note.Good    : [-0.048, 0.048],
+      Note.Bad     : [-0.064, 0.064],
+      Note.Miss    : [-1.000, 1.000]
+    }
+    self.performance = performance
+    self.set_weight(weights)
+    
+  def set_weight(self, weights:list=None):
+    if weights: weights = weights.copy()
+    if self.performance == Performance.AllPerfect or weights == None:
+      self._get_skew = lambda : 0.0
+    else:
+      assert(len(weights) == 5 and sum([int(i<0.0) for i in weights]) == 0)
+      if self.performance == Performance.FullCombo:
+        for i in [2,3,4]: weights[i] = 0.0
+      for i in range(1, len(weights)): weights[i] += weights[i-1]
+      self._get_skew = lambda : rd.choice(self.performance2bias[self.get_note()])
+    self.weights = weights
+    return True
+    
+  def get_note(self):
+    weights = self.weights
+    x = rd.random() * weights[-1]
+    if x <= weights[0]: return Note.Perfect
+    elif x <= weights[1]: return Note.Great
+    elif x <= weights[2]: return Note.Good
+    elif x <= weights[3]: return Note.Bad
+    else: return Note.Miss
+    
+  def get_skew(self):
+    return float(self._get_skew())
+    
+class UserConfig:
+  def __init__(self, *arg):
+    self.set_config(*arg)
+  def set_config(
+      self,
+      mode:Mode = None,
+      event:Event = None,
+      choose:Choose = None,
+      level:Level = None,
+      performance:Performance = None,
+      custom_performance:CustomPerformance = None,
+      event_config:dict = None, # 特殊活动特殊考虑
+      custom_performance_title:str = 'new_bee'
+    ):
+    self.mode = mode if mode is not None else Mode.Free
+    self.event = event if event is not None else Event.Mission
+    self.choose = choose if choose is not None else Choose.Loop
+    self.level = level if level is not None else Level.Expert
+    self.performance = performance if performance is not None else Performance.AllPerfect
+    self.custom_performance = custom_performance if custom_performance is not None else CustomPerformance
+    self.event_config = event_config if event_config is not None else {}
+    self.note_skewer = NoteSkewer(
+      self.custom_performance.weights_map[custom_performance_title],
+      self.performance
+    )
+  def set_custom_performance_title(self, custom_performance_title:str = 'new_bee'):
+    self.note_skewer.set_weight(self.custom_performance.weights_map[custom_performance_title])
+
+    
 
 #============ POS ============#
 
@@ -231,3 +301,6 @@ DILATION_TIME  = 1002000 # DILATION_TIME/1000000
 CLICK_PERIOD     = 0.05
 CLICK_GAP        = 0.1
 INCASE_DELAY_GAP = 0.5
+
+#============ main ============#
+CYCLE_GAP        = 0.5

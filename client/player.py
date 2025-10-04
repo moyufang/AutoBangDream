@@ -34,18 +34,20 @@ class Player:
     else:
       LogE("Unknown communication mode.")
       exit(1)
-      
-  def start_playing(self, song_duration):
-    dilation_time   = 1002000
-    correction_time = 1100000
+  
+  def set_caliboration_para(self, dilation_time, correction_time):
+    self.dilation_time = dilation_time
+    self.correction_time = correction_time
     
-    LogS("Start playing:")
-    LogS("detecting 'is_playing'.")
+  def start_playing(self, song_duration):
+    
+    LogS('playing', "Start playing")
+    LogS('playing', "detecting 'is_playing'")
     while not self.health_extrator.get_is_playing(): pass
-    LogS("Start tracing first note.")
+    LogS('playing', "Start tracing first note")
     
     start_time = time.time()
-    self.send_cmd(f't {int(start_time*1000000+0.5)} {correction_time} {dilation_time}')
+    self.send_cmd(f't {int(start_time*1000000+0.5)} {self.correction_time} {self.dilation_time}')
     predict_time = 0.0
     predict_count = 0
     while True:
@@ -61,8 +63,5 @@ class Player:
     predict_time = int(predict_time*1000000+0.5)
     self.send_cmd(f"s {predict_time}")
     
-    LogD("t_s:", t_s, "is_edge:", is_edge, "pred_time:", predict_time)
+    LogS('playing', f"t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
     time.sleep(song_duration+5)
-
-player = Player('tcp')
-

@@ -176,7 +176,7 @@ if mode == Mode.WalkThrough or mode == Mode.WalkThroughSheet:
 elif mode == Mode.Record or mode == Mode.Capture:
   is_recording = False
   while True:
-    img = full_grabber.grab()
+    img = full_grabber.grab()[:,:,:3]
     pv.load_img(cv.cvtColor(img, cv.COLOR_BGR2HSV), 'hsv')
     pv.show_img()
     if is_recording: save(img)

@@ -57,9 +57,15 @@ LogE = logger.error
 LogD = logger.debug
 LogI = logger.info
 
-status_logger = setup_logging(
-  name=__name__,
+state_logger = setup_logging(
+  name='state_logger',
   level=logging.DEBUG,
-  format_string='[STAUS @ %(filename)s:%(lineno)d] %(message)s'
+  format_string='[STATE "%(state)s" @ %(filename)s:%(lineno)d ] %(message)s'
 )
-LogS = logger.info
+class StateFilter(logging.Filter):
+  def filter(self, record):
+    record.username = getattr(record, 'state', 'unknown')
+    return True
+state_logger.addFilter(StateFilter())
+def LogS(state:str, *arg):
+  state_logger.debug(*arg, extra={'state':state})

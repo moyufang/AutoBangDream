@@ -1,40 +1,5 @@
 from configuration import *
-from numpy import random as rd
 from utils.ADB import push_file
-
-# 根据 weights 和 performance，确定每个 note 是否产生时移，以及产生时移的幅度
-# 关键函数 get_skew 用 _get_skew 实现了多态，便于后续更新策略
-class NoteSkewer:
-  def __init__(self, weights:list=None, performance:Performance=Performance.AllPerfect):
-    self.performance2bias = {
-      Note.Perfect : [0.0],
-      Note.Great   : [-0.032, 0.032],
-      Note.Good   : [-0.048, 0.048],
-      Note.Bad     : [-0.064, 0.064],
-      Note.Miss    : [-1.000, 1.000]
-    }
-    if weights: weights = weights.copy()
-    self.performance = performance
-    
-    if self.performance == Performance.AllPerfect or weights == None:
-      self._get_skew = lambda : 0.0
-    else:
-      assert(len(weights) == 5 and sum([int(i<0.0) for i in weights]) == 0)
-      if self.performance == Performance.FullCombo:
-        for i in [2,3,4]: weights[i] = 0.0
-      for i in range(1, len(weights)): weights[i] += weights[i-1]
-      self._get_skew = lambda : rd.choice(self.performance2bias[self.get_note()])
-    self.weights = weights
-  def get_note(self):
-    weights = self.weights
-    x = rd.random() * weights[-1]
-    if x <= weights[0]: return Note.Perfect
-    elif x <= weights[1]: return Note.Great
-    elif x <= weights[2]: return Note.Good
-    elif x <= weights[3]: return Note.Bad
-    else: return Note.Miss
-  def get_skew(self):
-    return float(self._get_skew())
 
 # 生成操作序列commands和保存为commands.sheet文件
 # commands = [
@@ -156,7 +121,9 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
     avail[touch] = release_t
   commands.sort(key=lambda item:item[0])
   
-  print(commands_path)
+  song_duration = commands[-1][0]
+  
+  # print(commands_path)
   with open(commands_path, "w", encoding='utf-8') as file:
     file.write(f"b %d\n"%(int(1000000*commands[0][0]+0.5)))
     cur_t = -1
@@ -168,7 +135,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
       file.write(cmd+'\n')
     file.write("t %d\n"%(cur_t))
     
-  return commands
+  return commands, song_duration
 
 # 306 Savior Of Songs
 # 85 ハッピーシンセサイザ
