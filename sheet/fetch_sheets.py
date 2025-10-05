@@ -63,21 +63,22 @@ def get_rp(mode:Mode, url:str, file_path:str, json_indent:int=2, is_breif:bool=T
     print()
   return rp, data
   
-mode = Mode.FetchOne
-if mode == Mode.FetchSheetsHeader:
+def fetch_sheets_header():
   url = get_all_header_url()
   file_path = fetch_dir+"raw_sheets_header.json"
-  rp, data = get_rp(mode, url, file_path)
+  rp, data = get_rp(Mode.FetchSheetsHeader, url, file_path)
   
   sheets_header = {}
   for sheet_id in data:
-    # print(sheet_id, end=' ')
     item = data[sheet_id]
     diff = item['difficulty']
     titles = item['musicTitle']
-    for t in item['musicTitle']:
+    title = None
+    sorted_titles = [titles[3], titles[0], titles[1]]
+    for t in sorted_titles:
       if t != None: title = t; break
-    # print(sheet_id, title, re.sub(special_char, '', title))
+    if title == None:
+      print(sheet_id, title, titles)
     title = re.sub(special_char, '', title)
     
     sheets_header[sheet_id] = [
@@ -98,18 +99,15 @@ if mode == Mode.FetchSheetsHeader:
   print(f"Saved as \"{file_path}\"")
   print()
   
-elif mode == Mode.SpecialChar:
-  title = "[期間限定 SPECIAL]ピコっと！パピっと！！ガルパ☆ピコ！！！"
-  print(title)
-  print(re.sub(special_char, '', title))
+def shave_str(title:str):
+  return re.sub(special_char, '', title)
   
-elif mode == Mode.FetchOne:
-  sheet_id, diff = "295", "4"
-  url = get_sheet_url(sheet_id, diff)
-  file_path = fetch_dir+"fetch_one_sheet_%s_%s.bestdori"%(sheet_id, diff)
-  rp, data = get_rp(mode, url, file_path)
+def fetch_one(song_id:int, level:int):
+  url = get_sheet_url(song_id, level)
+  file_path = fetch_dir+"fetch_one_sheet_%d_%d.bestdori"%(song_id, level)
+  rp, data = get_rp(Mode.FetchOne, url, file_path)
   
-elif mode == Mode.FetchLack:
+def fetch_lack():
   with open(sheet_dir+"sheets_header.json", "r", encoding="utf-8") as file:
     sheets_header = json.load(file)
   for k in sheets_header:
@@ -122,5 +120,19 @@ elif mode == Mode.FetchLack:
       
       url = get_sheet_url(item[0], i)
       file_path = sheets_dir+"%s_%s.bestdori"%(item[0], i)
-      rp, data = get_rp(mode, url, file_path, is_breif=True)
-      
+      rp, data = get_rp(Mode.FetchLack, url, file_path, is_breif=True)
+
+
+if __name__ == '__main__':
+  mode = Mode.FetchSheetsHeader
+  if mode == Mode.FetchSheetsHeader:
+    fetch_sheets_header()
+  elif mode == Mode.SpecialChar:
+    title = "[期間限定 SPECIAL]ピコっと！パピっと！！ガルパ☆ピコ！！！"
+    print(title, "-->")
+    print(shave_str(title))
+  elif mode == Mode.FetchOne:
+    fetch_one(306, 4)
+  elif mode == Mode.FetchLack:
+    fetch_lack()
+        

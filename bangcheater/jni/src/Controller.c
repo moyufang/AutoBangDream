@@ -12,6 +12,8 @@
 
 #define CONTROLLER_EXIT -1
 #define CONTROLLER_QUIT_CONNECTION -2
+#define CONTROLLER_READY 1
+#define CONTROLLER_READY_HASH "BANGCHEATERCONTROLLERREADY"
 
 struct LowLatencyController{
   int port;
@@ -48,13 +50,13 @@ void init_controller(struct LowLatencyController *clr, int port, int buffer_size
 int launch_controller(struct LowLatencyController *clr){
   // 创建 socket
   if ((clr->server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    LogE("socket failed");
+    LogE("TCP socket failed");
     exit(EXIT_FAILURE);
   }
   
   // 设置 socket 选项 - 重用地址
   if (setsockopt(clr->server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(clr->opt), sizeof(clr->opt))) {
-      LogE("setsockopt");
+      LogE("TCP setsockopt");
       close(clr->server_fd);
       exit(EXIT_FAILURE);
   }
@@ -65,19 +67,17 @@ int launch_controller(struct LowLatencyController *clr){
   
   // 绑定端口
   if (bind(clr->server_fd, (struct sockaddr *)&clr->address, clr->addrlen) < 0) {
-      LogE("bind failed");
+      LogE("TCP bind failed");
       close(clr->server_fd);
       exit(EXIT_FAILURE);
   }
   
   // 监听连接
   if (listen(clr->server_fd, 5) < 0) {
-      LogE("listen failed");
+      LogE("TCP listen failed");
       close(clr->server_fd);
       exit(EXIT_FAILURE);
   }
-  
-  LogL("BangCheater TCP server listening on port %d\n", clr->port);
   
   // 设置接收超时
   struct timeval tv;
@@ -88,6 +88,8 @@ int launch_controller(struct LowLatencyController *clr){
   char *buffer = malloc(clr->port);
   char *rp_buffer = malloc(clr->port);
   
+  LogI("TCP listening on port %d\n", clr->port);
+
   int is_running = 1;
   while (is_running) {
     FD_ZERO(&readfds);
@@ -104,7 +106,7 @@ int launch_controller(struct LowLatencyController *clr){
     if (activity > 0 && FD_ISSET(clr->server_fd, &readfds)) {
       // 接受新连接
       if ((clr->client_fd = accept(clr->server_fd, (struct sockaddr *)&(clr->address), (socklen_t*)&(clr->addrlen))) < 0) {
-        LogL("%accept");
+        LogI("accept");
         continue;
       }
       
@@ -112,7 +114,7 @@ int launch_controller(struct LowLatencyController *clr){
       set_tcp_nodelay(clr->client_fd);  // 禁用Nagle算法，减少延迟
       setsockopt(clr->client_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv));
       
-      LogL("Client connected\n");
+      LogI("TCP connected\n");
       
       // 处理客户端通信
       int is_waiting = 0;
@@ -122,7 +124,8 @@ int launch_controller(struct LowLatencyController *clr){
         int bytes_read = recv(clr->client_fd, buffer, clr->buffer_size - 1, 0);
         if (bytes_read <= 0) {
           if (bytes_read == 0) {
-              LogL("Controller Client disconnected(Receving noting).\n");
+              LogI("TCP disconnected(receving noting).\n");
+              break;
           } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
               // 没有数据可读，可以继续等待
               // 注意：如果是非阻塞模式，那么可以继续循环，但可能需要进行适当的休眠避免忙等待
@@ -133,11 +136,11 @@ int launch_controller(struct LowLatencyController *clr){
               }
               continue;
           } else {
-              LogE("Controller recv error: %s\n", strerror(errno));
+              LogE("TCP recv error: %s\n", strerror(errno));
               break;
           }
         }
-        LogD("TCP recv: bytes:%d content:%s\n",bytes_read, buffer);
+        //LogD("TCP recv: bytes:%d content:%s\n",bytes_read, buffer);
         is_waiting = 0;
         
         // 处理命令（去掉换行符）
@@ -146,25 +149,33 @@ int launch_controller(struct LowLatencyController *clr){
         }
         
         int rp_code = clr->process(buffer, rp_buffer);
-        if (rp_code == CONTROLLER_EXIT){
+        if (rp_code == CONTROLLER_READY){
+          LogI("TCP confirm been ready.");
+          strcpy(rp_buffer, CONTROLLER_READY_HASH);
+          send(clr->client_fd, rp_buffer, strlen(rp_buffer), 0);
+          rp_buffer[0] = 0;
+        }
+        else if (rp_code == CONTROLLER_EXIT){
           is_running = 0;
           break;
         }
         else if (rp_code == CONTROLLER_QUIT_CONNECTION) break;
         
         // 发送响应
-        if (send(clr->client_fd, rp_buffer, strlen(rp_buffer), 0) < 0) {
-            LogE("Controller send failed");
-            break;
+        if (rp_buffer[0] && send(clr->client_fd, rp_buffer, strlen(rp_buffer), 0) < 0) {
+          LogE("TCP send failed");
+          break;
         }
       }
       
       close(clr->client_fd);
-      LogL("Client connection closed\n");
+      LogI("Client connection closed\n");
     }
     
     // 这里可以添加其他后台任务
   }
+
+  LogI("TCP close");
   
   close(clr->server_fd);
   free(buffer);

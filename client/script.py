@@ -7,9 +7,7 @@ import time
 class Script:
   def click(self, x, y):
     touch = 0
-    self.player.send_cmd(f'd {touch} {x} {y}\nc\n')
-    time.sleep(CLICK_PERIOD)
-    self.player.send_cmd(f'u {touch}')
+    self.player.click(touch, x, y)
     return True
   def act(self, state:str):
     if state not in self.state2action:
@@ -35,6 +33,17 @@ class Script:
       'award_loading': lambda: True,
       'award_score':   lambda : self.click(1080, 620),
       'choose':        self._choose,
+      'choose_dialog': lambda : (
+                                self.click( 876, 208),
+                                time.sleep(CLICK_GAP),
+                                self.click( 876, 284),
+                                time.sleep(CLICK_GAP),
+                                self.click( 876, 356),
+                                time.sleep(CLICK_GAP),
+                                self.click( 876, 430),
+                                time.sleep(CLICK_GAP),
+                                self.click( 780, 620)
+      ),
       'failed':        lambda : self.click( 640, 440),
       'failed_again':  lambda : self.click( 680, 440),
       'join':          lambda : self.click(1080, 620),
@@ -58,6 +67,7 @@ class Script:
       'ready_adjust':  lambda : self.click( 780, 500),
       'ready_done':    lambda : True,
       'stage':         lambda : self.click(1080, 620),
+      'stage_choose':  lambda : self.click(1080, 620),
       'tour':          lambda : self.click( 440, 450) if self.uc.event_config['lobby'] == 'event' else \
                                 self.click( 840, 450),
       'tour_choose':   lambda : self.click(1080, 620),
@@ -85,7 +95,7 @@ class Script:
       time.sleep(CLICK_GAP)
       self.click(600+self.uc.level*84, 540)
       time.sleep(CLICK_GAP)
-    
+      
     self.click(1120, 600)
     return True
   

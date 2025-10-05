@@ -1,13 +1,13 @@
-from UI_recognition.predict import UIRecognition
-from song_recognition.predict import SongRecognition
+from configuration import *
 from utils.WinGrabber import MumuGrabber
 from utils.ADB import push_file
 from utils.json_refiner import refine
-from configuration import *
+from utils.log import LogE, LogD, LogI, LogS
+from UI_recognition.predict import UIRecognition
+from song_recognition.predict import SongRecognition
 from client.player import Player
 from client.script import Script
-from client.sheet2commands import NoteSkewer, sheet2commands
-from utils.log import LogE, LogD, LogI, LogS
+from client.sheet2commands import sheet2commands
 import time
 import cv2 as cv
 
@@ -48,9 +48,11 @@ def to_torch_type(img):
 
 log_imgs_path = './log_imgs/'
 song_duration = None
+sheets_path = './sheet/sheets/'
 commands_sheet_path = './client/commands.sheet'
 commands_json_path = "./client/commands.json"
 is_save_commands_json = True
+is_checking_3d = True
 last_state = None
 same_state_count = 1
 MAX_SAME_STATE_COUNT = 100
@@ -81,7 +83,7 @@ while True:
     song_id, song_name = song_recognition.get_song(th_img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name}')
     
-    sheet_path = f'./sheet/sheets/{song_id}_{user_config.level}.bestdori'
+    sheet_path = sheets_path+f'{song_id}_{user_config.level}.bestdori'
     commands, song_duration = sheet2commands(sheet_path, commands_sheet_path, user_config.note_skewer)
     LogS('ready', f'song_duration:{song_duration}')
     LogS('ready', f'Try to upload "{sheet_path}"')
@@ -91,6 +93,18 @@ while True:
       with open(commands_json_path, "w", encoding="utf-8") as file: json.dump(commands, file)
       refine(commands_json_path)
       LogS('ready', f'Save commands_json to "{commands_json_path}"')
+      
+    # 排除 3d 演出、3d cut in、mv 的情况
+    while is_checking_3d:
+      hsv_img = cv.cvtColor(grabber.grab()[:,:,:3], cv.COLOR_BGR2HSV)
+      c1 = hsv_img[COLOR_1_POS[1], COLOR_1_POS[0]]
+      c2 = hsv_img[COLOR_2_POS[1], COLOR_2_POS[0]]
+      if (COLOR_1_LOW <= c1 and c1 <= COLOR_1_HIGH) and\
+        (COLOR_2_LOW <= c2 or c2 <= COLOR_2_HIGH): break
+      script.click(140, 652)
+      time.sleep(CLICK_GAP*3)
+      script.click(0, 0)
+      time.sleep(CLICK_GAP*3)
     
     script.act(state)
   elif state == 'playing':
@@ -101,10 +115,3 @@ while True:
   
   time.sleep(CYCLE_GAP)
   
-
-  
-  
-  
-
-
-

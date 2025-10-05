@@ -298,9 +298,21 @@ DILATION_TIME  = 1002000 # DILATION_TIME/1000000
 
 #============ script ============#
 
+TCP_SEND_GAP     = 0.005
 CLICK_PERIOD     = 0.05
 CLICK_GAP        = 0.1
 INCASE_DELAY_GAP = 0.5
+
+COLOR_1_LOW, COLOR_1_HIGH = np.uint8([[155,   6, 240], [170,  12, 255]]) #
+COLOR_2_LOW, COLOR_2_HIGH = np.uint8([[  0,   0, 150], [  5,   5, 170]]) #
+COLOR_1_POS = [640, 670]
+COLOR_2_POS = [496, 640]
+#============ song recognition ============#
+
+STD_LEVEL_FIX_TITLE_REGION   = [220, 540, 780, 576]
+STD_LEVEL_UNFIX_TITLE_REGION = [116, 540, 566, 576]
+STD_LEVEL_FIX_LEVEL_REGION   = [248, 580, 284, 606]
+STD_LEVEL_UNFIX_LEVEL_REGION = [138, 576, 168, 606]
 
 #============ main ============#
 CYCLE_GAP        = 0.5

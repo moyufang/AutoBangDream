@@ -3,6 +3,11 @@
 import socket
 import time
 import subprocess
+import os
+from utils.log import LogE, LogD, LogI, LogS
+
+CONTROLLER_READY_HASH = "BANGCHEATERCONTROLLERREADY"
+RECV_TIMEOUT = 0.5
 
 class LowLatencyController:
   def __init__(self, adb_path="adb", device="127.0.0.1:7555", local_port=12345):
@@ -12,26 +17,8 @@ class LowLatencyController:
     self.remote_port = 12345
     self.socket = None
     self.latency_stats = []
-      
-  def setup_adb_forward(self):
-    try:
-      # 移除可能存在的旧转发
-      remove_cmd = [self.adb_path, "-s", self.device, "forward", "--remove", f"tcp:{self.local_port}"]
-      subprocess.run(remove_cmd, capture_output=True)
-      
-      # 设置新的端口转发
-      forward_cmd = [self.adb_path, "-s", self.device, "forward", f"tcp:{self.local_port}", f"tcp:{self.remote_port}"]
-      result = subprocess.run(forward_cmd, capture_output=True, text=True, check=True)
-      print(f"ADB forward established: {result.stdout.strip()}")
-      
-      # 等待转发稳定
-      time.sleep(0.5)
-      return True
-    except subprocess.CalledProcessError as e:
-      print(f"ADB forward failed: {e}")
-      return False
   
-  def connect_with_retry(self, max_retries=3):
+  def _connect(self, max_retries=3):
     for attempt in range(max_retries):
       try:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,21 +26,29 @@ class LowLatencyController:
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # 禁用Nagle算法
         self.socket.settimeout(5.0)
         self.socket.connect(('127.0.0.1', self.local_port))
-        print("Connected to BangCheater")
         return True
       except Exception as e:
-        print(f"Connection attempt {attempt + 1} failed: {e}")
+        LogE(f"Connection attempt {attempt + 1} failed: {e}")
         if self.socket:
             self.socket.close()
             self.socket = None
         time.sleep(0.1 * (attempt + 1))  # 递增重试延迟
     return False
   
-  def send_command_low_latency(self, command, expect_response=True):
-    if not self.socket: return None
-        
-    start_time = time.time()
-    
+  def connect(self):
+    while True:
+      try:
+        if not self._connect(): LogE("Failed to connect after retries"); exit(1)
+        self.send_command_low_latency("p")
+        rp = self.recv()
+        if rp == CONTROLLER_READY_HASH: break
+      except Exception as e:
+        LogI(f"Test connection failed: {e}")
+      time.sleep(1.0)
+    LogI("Connected to 'bangcheater'")
+  
+  def send_command_low_latency(self, command):
+    if not self.socket: return False
     try:
       if not command.endswith('\n'): command += '\n'
       
@@ -61,17 +56,21 @@ class LowLatencyController:
       self.socket.sendall(command.encode('utf-8'))
       send_time = time.time()
       
-      if not expect_response: return "OK"
-          
     except socket.timeout:
       print(f"Command timeout: {command.strip()}")
-      return None
+      return False
     except Exception as e:
       print(f"Command failed: {e}")
-      return None
+      return False
+    
   def recv(self):
     # 接收响应（带超时）
-    response = self.socket.recv(1024).decode('utf-8').strip()
+    try:
+      self.socket.settimeout(RECV_TIMEOUT)
+      response = self.socket.recv(1024).decode('utf-8').strip()
+    except socket.timeout:
+      LogE(f"Receive timeout ({RECV_TIMEOUT}s)")
+      raise socket.timeout
     return response
   
   def start_bangcheater(
@@ -80,49 +79,58 @@ class LowLatencyController:
     commands_path="./data/local/tmp/commands.sheet"
   ):
       try:
-        print("Kill bangcheater")
+        # 让 adb 连接
+        connect_cmd = [self.adb_path, "connect", self.device]
+        os.system(' '.join(connect_cmd))
+        LogI("controller connect to 127.0.0.1:7555")
+        
+        # 移除可能存在的旧端口转发
+        remove_cmd = [self.adb_path, "-s", self.device, "forward", "--remove", f"tcp:{self.local_port}"]
+        os.system(' '.join(remove_cmd))
+        LogI("controller remove old forward tcp:1234")
+        
+        # 设置新的端口转发
+        forward_cmd = [self.adb_path, "-s", self.device, "forward", f"tcp:{self.local_port}", f"tcp:{self.remote_port}"]
+        result = os.system(' '.join(forward_cmd))
+        LogI(f"controller establish new forward, code:{result}")
+        
         kill_cmd = [self.adb_path, "-s", self.device, "shell", "pkill", "-f", "bangcheater"]
-        subprocess.run(kill_cmd, capture_output=True)
-
-        print("Start bangcheater")
+        result = os.system(' '.join(kill_cmd))
+        LogI("controller kill old 'bangcheater'")
+        
         start_cmd = [self.adb_path, "-s", self.device, "shell", f"{remote_path}", f"{commands_path}", "-t"]
         self.p = subprocess.Popen(start_cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+        LogI("controller start new 'bangcheater'")
         
-        print("BangCheater started")
-        time.sleep(1)  # 等待服务启动
-        return True
+        # 等待服务启动
+        timeout = 3
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+          if self.p.poll() is None:
+            LogI("'bangcheater' started")
+            return True
+        return False
           
       except subprocess.CalledProcessError as e:
-        print(f"Failed to start BangCheater: {e}")
+        LogE(f"controller failed to start BangCheater: {e}")
         return False
-  def run_commands_from_file(self, file_path:str|list):
-      if isinstance(file_path, str):
-          with open(file_path, 'r') as f:
-              commands = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-      else:
-          commands = file_path
-      try:
-        results = []
-        for cmd in commands:
-          start_time = time.time()
-          response = self.send_command_low_latency(cmd)
-          end_time = time.time()
+      
+  def run_commands(self, cmd):
+    results = []
+    
+    start_time = time.time()
+    response = self.send_command_low_latency(cmd)
+    end_time = time.time()
+    
+    if response:
+      latency = (end_time - start_time) * 1000
+      results.append(f"{cmd} -> {response} ({latency:.1f}ms)")
+      LogD(f"Executed: {cmd} -> {response} ({latency:.1f}ms)")
+    else:
+      results.append(f"{cmd} -> FAILED")
+      LogD(f"Failed: {cmd}")
+    return results[0]
           
-          if response:
-            latency = (end_time - start_time) * 1000
-            results.append(f"{cmd} -> {response} ({latency:.1f}ms)")
-            print(f"Executed: {cmd} -> {response} ({latency:.1f}ms)")
-          else:
-            results.append(f"{cmd} -> FAILED")
-            print(f"Failed: {cmd}")
-          
-          time.sleep(0.01)  # 小延迟避免过载
-        
-        return results
-          
-      except Exception as e:
-        print(f"Error running commands: {e}")
-        return []
   def cleanup(self):
     if self.socket:
       try: self.send_command_low_latency("QUIT", expect_response=False)
@@ -134,7 +142,19 @@ class LowLatencyController:
       remove_cmd = [self.adb_path, "-s", self.device, "forward", "--remove", f"tcp:{self.local_port}"]
       subprocess.run(remove_cmd, capture_output=True)
     except: pass
-    
+
+TCP_SEND_GAP = 0.005
+
+def click(x, y):
+  global clr
+  clr.send_command_low_latency('d 0 %d %d\n'%(x,y))
+  time.sleep(TCP_SEND_GAP)
+  clr.send_command_low_latency('c\n')
+  time.sleep(0.05)
+  clr.send_command_low_latency('u\n')
+  time.sleep(TCP_SEND_GAP)
+  clr.send_command_low_latency('c\n')
+
 if __name__ == "__main__":
   clr = LowLatencyController(
     adb_path="adb",
@@ -142,26 +162,20 @@ if __name__ == "__main__":
     local_port=12345
   )
   try:
-    # 1. 设置ADB转发
-    if not clr.setup_adb_forward(): exit(1)
     
-    # 2. 启动bangcheater
+    # 启动bangcheater
     clr.start_bangcheater()
+    time.sleep(0.0)
+    # 连接
+    clr.connect()
     
-    # 3. 连接
-    if not clr.connect_with_retry():
-      print("Failed to connect after retries")
-      exit(1)
-
-    print("file")
-    clr.send_command_low_latency("f\n")
+    # 通信
+    clr.send_command_low_latency("f")
     
-    time.sleep(1.0)
-    
-    print("file")
-    clr.send_command_low_latency("f\n")
-    
-    while True:pass
+    while True:
+      cmd = input("type cmd:\n")
+      x, y = cmd.split(' ')
+      click(int(x), int(y))
       
   finally:
     clr.cleanup()

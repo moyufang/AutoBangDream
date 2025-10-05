@@ -5,7 +5,7 @@
 #include <stdarg.h>
 
 // Use macro to ban unnecessary logs
-// #define NO_LOG
+// #define NO_INFO_LOG
 // #define NO_ERROR_LOG
 // #define NO_DEBUG_LOG
 // #define NO_RUNNING_LOG
@@ -16,7 +16,7 @@
 void LogE(const char* format, ...) {
   
   // 添加前缀
-  fprintf(stderr, "[E@bc]: ");
+  fprintf(stderr, "[ERROR @ bc ]: ");
   
   // 处理可变参数
   va_list args;
@@ -31,7 +31,7 @@ void LogE(const char* format, ...) {
 #else
 void LogD(const char* format, ...) {
   // 添加前缀
-  fprintf(stderr, "[D@bc]: ");
+  fprintf(stderr, "[DEBUG @ bc ]: ");
   
   // 处理可变参数
   va_list args;
@@ -41,12 +41,12 @@ void LogD(const char* format, ...) {
 }
 #endif
 
-#ifdef NO_LOG
-#define LogL (void)
+#ifdef NO_INFO_LOG
+#define LogI (void)
 #else
-void LogL(const char* format, ...) {
+void LogI(const char* format, ...) {
   // 添加前缀
-  fprintf(stderr, "[L@bc]: ");
+  fprintf(stderr, "[INFO  @ bc ]: ");
   
   // 处理可变参数
   va_list args;
@@ -61,7 +61,7 @@ void LogL(const char* format, ...) {
 #else
 void LogR(const char* format, ...) {
   // 添加前缀
-  fprintf(stderr, "[R@bc]: ");
+  fprintf(stderr, "[RUN   @ bc ]: ");
   
   // 处理可变参数
   va_list args;

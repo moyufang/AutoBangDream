@@ -127,13 +127,16 @@ def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
 	
 	th.save(nnw, model_path)
 
-model_id = 1
-if model_id == 1:
-  model_name = "BangUINet"
-  Net = BangUiNet
-  batch_size = 64 
-  epoches = 20
-  up_labels = ['award', 'award_again', 'ready', 'ready_done'] 
+#============ train configuration ============#
+
+Net = BangUiNet
+model_name = "BangUINet"
+batch_size = 64 
+epoches = 20
+up_labels = ['award', 'award_again', 'ready', 'ready_done'] 
+is_load_new_model = True
+
+#============ train ============#
  
 dataset = ImgsDataset(model_name)
 batch_size = get_batch_size(64, len(dataset))
@@ -143,7 +146,7 @@ loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 model_path = './UI_recognition/'+model_name+".pth"
 nnw = Net(dataset.classes_num)
 
-if False:
+if is_load_new_model:
   nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
 else:
   nnw = th.load(model_path)

@@ -1,76 +1,12 @@
 from configuration import *
 from utils.WinGrabber import *
+from utils.Preview import  Preview
 from play.note_extractor import NoteExtractor
 import cv2 as cv
 from pathlib import Path
 import time
 
-class Preview:
-  img_type = {
-    'bgr' : None,
-    'bgra': cv.COLOR_BGRA2BGR,
-    'hsv' : cv.COLOR_HSV2BGR,
-    'rgb' : cv.COLOR_RGB2BGR,
-    'gray': cv.COLOR_GRAY2BGR,
-    'lab' : cv.COLOR_Lab2BGR,
-    'yuv' : cv.COLOR_YUV2BGR,
-    'hls' : cv.COLOR_HLS2BGR
-  }
-  
-  def __init__(self, display_scale:int=1, window_name:str='Preview'):
-    self.window_name = window_name
-    self.img, self.mouse_x, self.mouse_y = None, -1, -1
-    self.display_scale = display_scale
-    mouse_callback = lambda e, x, y, f, p: self.mouse_callback(e, x, y, f, p)
-    cv.namedWindow(self.window_name)
-    cv.setMouseCallback(self.window_name, mouse_callback)
-    
-    self.add_loop_func = lambda : None
-    
-  def __del__(self):
-    cv.destroyWindow(self.window_name)
-    
-  def mouse_callback(self, event, x, y, flags, param):
-    self.mouse_x, self.mouse_y = x, y
-    x, y = x//self.display_scale, y//self.display_scale
-    if event == cv.EVENT_MOUSEMOVE and self.img is not None:
-      # 确保坐标在图像范围内
-      if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
-        color = self.img[y, x]
-        print("(x,y):(%4d, %4d)|(%4d,%4d) color:" % (x, y, x*self.display_scale, y*self.display_scale) + str(color)+f" type:{self.type}")
-        
-  def load_img(self, img:str|cv.Mat, ty:str=None):
-    self.type = ty
-    
-    if isinstance(img, str):
-      assert(os.path.exists(img))
-      self.img = cv.imread(img)
-      print("img:", img, " self.img:", self.img.shape if img is not None else None)
-      assert(self.img is not None)
-      
-      if self.type in Preview.img_type: pass
-      elif img.ndim == 2: self.type = 'gray'
-      elif img.ndim == 3 and img.shape[2] == 3: self.type = 'bgr'
-      elif img.ndim == 3 and img.shape[2] == 4: self.type = 'bgra'
-      else: self.type = 'unknown'
-      
-    elif isinstance(img, np.ndarray):
-      self.img, self.type = img, ty
-    else:
-      print("Loading img failed: Unknown img.")
-      
-    if self.type not in Preview.img_type: self.type = 'unknown'
-    # print(f"Loading img succeeded with type:\"{self.type}\" shape:{self.img.shape} type:{self.type}")
-    
-  def show_img(self):
-    if self.display_scale != 1:
-      img = cv.resize(src=self.img, dsize=None, fx=self.display_scale, fy=self.display_scale, interpolation=cv.INTER_CUBIC)
-    else:
-      img = self.img
-    if self.type in Preview.img_type:
-      cv.imshow(self.window_name, cv.cvtColor(img, Preview.img_type[self.type]))
-    else:
-      cv.imshow(self.window_name, img)
+
 
 class Mode(Enum):
   Capture          = auto()
@@ -81,12 +17,13 @@ class Mode(Enum):
   WalkThroughSheet = auto()
 
 # 自定义运行时参数
-SCALE = 2
+SCALE = 1
 is_save        = False                # 是否保存帧
+save_scale     = 1                    # 保存时的缩放
 frame_id_start = 0                    # 帧ID起始值
 frame_id       = frame_id_start       # 帧ID
-frames_path    = './UI_recognition/BangUINet_train_imgs/'     # 帧保存路径
-frame_name     = 'f%05d.png'
+frames_path    = './song_recognition/full/'     # 帧保存路径
+frame_name     = 'f%03d.png'
 frame_list     = []                   # 在 WalkThrough 和 WalkThroughSheet 模式下，指定待查看的图片程 frame_id
                                       # 为空列表时，则抓取 frames_path 下所有 png 图片
 
@@ -104,7 +41,7 @@ trace_note_path       = \
 trace_first_note_path = \
   './play/trace_first_note.json'      # ExtractFirstNote 模式下，结果的保存地址
 
-mode = Mode.WalkThrough            # 选择模式
+mode = Mode.Capture            # 选择模式
 
 # 计算得到的参数
 is_extract_first_note = mode == Mode.TraceFirstNote  # 选择 提取第一个 note，ExtractFirstNote 专用
@@ -114,13 +51,15 @@ if mode != Mode.WalkThrough and mode != Mode.WalkThroughSheet:
   track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
   extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
 else: full_grabber, track_grabber, extractor = None, None, None
-pv = Preview(8)
+pv = Preview(1)
 def q(): global pv; del pv
 def save(img):
   global frame_id
   img_path = frames_path + frame_name%frame_id
   frame_id += 1
-  cv.imwrite(img_path, img)
+  cv.imwrite(img_path, cv.resize(
+    img, [STD_WINDOW_WIDTH//save_scale, STD_WINDOW_HEIGHT//save_scale],
+    interpolation=cv.INTER_AREA))
   print(f"Save img to \"{img_path}\"")
 def gss(img:None): # grab-show-save
   img = extractor.grab() if img is None else img

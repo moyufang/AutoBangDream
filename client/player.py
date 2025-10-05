@@ -8,8 +8,8 @@ from play.predict import predict
 from configuration import *
 
 class Player:
-  def __init__(self, communication_mode:str):
-    SCALE = 2
+  def __init__(self, communication_mode:str, init_scale=2):
+    SCALE = init_scale
 
     self.full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None) 
     self.track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
@@ -17,20 +17,19 @@ class Player:
     self.health_extrator = HealthExtractor(self.full_grabber)
     
     self.communication_mode = communication_mode
-    if self.communication_mode == 'adb':
+    if self.communication_mode == 'stdio':
       adb = ADB()
       self.send_cmd = lambda cmd: adb.write(cmd+'\n')
     elif self.communication_mode == 'tcp':
-      clr = clr = LowLatencyController(
+      clr = LowLatencyController(
         adb_path="adb",
-        device="-s 127.0.0.1:7555",
+        device="127.0.0.1:7555",
         local_port=12345
       )
       clr.start_bangcheater()
-
-      if not clr.connect_with_retry(): print("Failed to connect after retries"); exit(1)
+      clr.connect()
     
-      self.send_cmd = lambda cmd: clr.socket.sendall(cmd)
+      self.send_cmd = lambda cmd: clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
     else:
       LogE("Unknown communication mode.")
       exit(1)
@@ -38,6 +37,15 @@ class Player:
   def set_caliboration_para(self, dilation_time, correction_time):
     self.dilation_time = dilation_time
     self.correction_time = correction_time
+    
+  def click(self, touch, x, y):
+    self.send_cmd(f'd {touch} {x} {y}\n')
+    time.sleep(TCP_SEND_GAP)
+    self.send_cmd(f'c\n')
+    time.sleep(CLICK_PERIOD)
+    self.send_cmd(f'u {touch}\n')
+    time.sleep(TCP_SEND_GAP)
+    self.send_cmd(f'c\n')
     
   def start_playing(self, song_duration):
     

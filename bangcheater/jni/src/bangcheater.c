@@ -133,7 +133,7 @@ static void start_player(int right_now){
     long long cur_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
     long long here_first_beat_time = start_time + predict_time + shift_time + correction_time;
     if (right_now) here_first_beat_time = cur_time;
-    LogL(
+    LogI(
       "Calibration para:\n\tcur_time:%lld h_first_beat_time:%lld\n\tdiff:%lld\n", 
       cur_time, here_first_beat_time, here_first_beat_time-cur_time
     );
@@ -177,7 +177,7 @@ static void start_player(int right_now){
     fprintf(stderr, "Finished playing.\n");
 }
 static void read_commands(FILE* input){
-  LogL("Read commands from '%s'\n", commands_file_path);
+  LogI("Read commands from '%s'\n", commands_file_path);
   time_top = opt_top = 0;
   char buffer[64];
   while (fscanf(input, "%s", buffer) != EOF){
@@ -302,6 +302,9 @@ static int parse_input(const char* buffer){
     case 'e':
       return CONTROLLER_EXIT;
       break;
+    case 'p':
+      return CONTROLLER_READY;
+      break;
     default:
       break;
   }
@@ -319,8 +322,12 @@ static void io_handler(FILE* input, FILE* output){
   }
 }
 static int tcp_io(const char *buffer, char *response){
-  if (parse_input(buffer) == CONTROLLER_EXIT) return CONTROLLER_EXIT;
-  response[0] = 0;
+  int ret_code = parse_input(buffer);
+  switch (ret_code){
+    case CONTROLLER_READY: return CONTROLLER_READY;
+    case CONTROLLER_EXIT: return CONTROLLER_EXIT;
+    default: response[0] = 0; return 0;
+  }
   return 0;
 }
 
@@ -328,7 +335,7 @@ int main(int argc, char* argv[]){
 
   //<============ Get input device ============>
   const char* devpath = "/dev/input/event4";
-  LogL("Depend device: %s\n", devpath);
+  LogI("Depend device: %s\n", devpath);
   consider_device(devpath);
 
   if (evdev == NULL){
@@ -365,7 +372,7 @@ int main(int argc, char* argv[]){
 
   //<============ ADB ============>
   if (mode == 1){
-    LogL("Reading from STDIN\n");
+    LogI("Reading from STDIN\n");
     
     FILE* input = NULL, *output = NULL;
     input = stdin;
@@ -378,14 +385,14 @@ int main(int argc, char* argv[]){
   }
   //<============ TCP ============>
   else if(mode == 2){
-    LogL("Reading from TCP. PORT:%d\n", PORT);
+    LogI("Reading from TCP PORT:%d\n", PORT);
 
     struct LowLatencyController clr;
     init_controller(&clr, PORT, BUFFER_SIZE, tcp_io);
     launch_controller(&clr);
   }
 
-  LogL("Kill bangcheater.\n");
+  LogI("Kill bangcheater.\n");
   libevdev_free(evdev);
   close(fd);
 
