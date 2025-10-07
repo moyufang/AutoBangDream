@@ -5,7 +5,8 @@ __pycache__/
 *.pyd
 
 *.png
-# !UI_recognition/BangUINet_train_imgs/*.png
+*.pth
+*.ckpt
 UI_recognition/BangUINet.pth
 UI_recognition/change_img_title.py
 

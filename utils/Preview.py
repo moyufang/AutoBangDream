@@ -14,10 +14,11 @@ class Preview:
     'hls' : cv.COLOR_HLS2BGR
   }
   
-  def __init__(self, display_scale:int=1, window_name:str='Preview'):
+  def __init__(self, display_scale:int=1, window_name:str='Preview', is_mouse:bool =True):
     self.window_name = window_name
     self.img, self.mouse_x, self.mouse_y = None, -1, -1
     self.display_scale = display_scale
+    self.is_mouse = is_mouse
     mouse_callback = lambda e, x, y, f, p: self.mouse_callback(e, x, y, f, p)
     cv.namedWindow(self.window_name)
     cv.setMouseCallback(self.window_name, mouse_callback)
@@ -28,6 +29,7 @@ class Preview:
     cv.destroyWindow(self.window_name)
     
   def mouse_callback(self, event, x, y, flags, param):
+    if not self.is_mouse: return
     self.mouse_x, self.mouse_y = x, y
     x, y = x//self.display_scale, y//self.display_scale
     if event == cv.EVENT_MOUSEMOVE and self.img is not None:

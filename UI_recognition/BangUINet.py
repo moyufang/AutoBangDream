@@ -83,3 +83,23 @@ class BangUiNet(nn.Module):
 		x = x.view(x.size(0), -1)
 		x = self.classifier(x)
 		return x
+
+if __name__ == "__main__":
+    # 创建模型实例
+    model = BangUiNet(num_classes=26)
+    
+    # 测试前向传播
+    batch_size = 4
+    dummy_input = th.randn(batch_size, 3, 160, 90)
+    features = model(dummy_input)
+    
+    print(f"输入尺寸: {dummy_input.shape}")
+    print(f"输出特征尺寸: {features.shape}")
+    
+    # 统计参数数量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"总参数量: {total_params:,}")
+    
+    # 验证模型组件
+    # print("\n模型结构:")
+    # print(model)

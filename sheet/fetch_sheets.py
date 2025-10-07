@@ -14,7 +14,7 @@ sheet_dir = './sheet/'
 fetch_dir = './sheet/fetch/'
 sheets_dir = './sheet/sheets/'
 special_char = \
-  r"[ /_\(\)\[\]\{\}!?:,.@#$%^&*=\"\'\-—（）【】！？：，。”“‘’「」　＆＊＝×·・★☆◎－∞♪\n\r\t]"
+  r"[ /_\(\)\[\]\{\}!?:,.@#$%^&*=\"\'\-—（）【】！？：，。”“‘’「」　＆＊＝×·・★☆◎－∞♪\n\r\t↑]"
 
 headers = {
   "user-agent": r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -62,7 +62,10 @@ def get_rp(mode:Mode, url:str, file_path:str, json_indent:int=2, is_breif:bool=T
     print(f"Saved as \"{file_path}\"")
     print()
   return rp, data
-  
+
+def shave_str(title:str):
+  return re.sub(special_char, '', title).lower()
+
 def fetch_sheets_header():
   url = get_all_header_url()
   file_path = fetch_dir+"raw_sheets_header.json"
@@ -79,7 +82,7 @@ def fetch_sheets_header():
       if t != None: title = t; break
     if title == None:
       print(sheet_id, title, titles)
-    title = re.sub(special_char, '', title)
+    title = shave_str(title)
     
     sheets_header[sheet_id] = [
       int(sheet_id),
@@ -98,9 +101,6 @@ def fetch_sheets_header():
     file.write('"-1":[-1, "", -1, -1, -1, -1, -1]\n}')
   print(f"Saved as \"{file_path}\"")
   print()
-  
-def shave_str(title:str):
-  return re.sub(special_char, '', title)
   
 def fetch_one(song_id:int, level:int):
   url = get_sheet_url(song_id, level)
