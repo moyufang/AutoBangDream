@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://github.com/MoYuFang/AutoBangDream">
-    <img src="kokoro.png" width="200" height="200" style="
+    <img src="kokoro(nbg).png" width="200" height="200" style="
       border-radius: 50%; 
       border: 4px solid #ffe600; 
       box-shadow:
