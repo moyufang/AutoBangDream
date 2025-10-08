@@ -6,13 +6,12 @@ from pathlib import Path
 import sys
 import os
 
-from song_recognition.TitleNet import load_TitleNet
-from song_recognition.train_arcface import ArcFaceLoss  # 虽然推理时不需要，但加载模型需要
-from song_recognition.train_triplet import TripletLoss
+from song_recognition.TitleNet import load_TitleNet, prepocess_img
 from utils.log import LogI, LogE, LogD, LogE
+from configuration import *
 
 class SongRecognition:
-  def __init__(self, ckpt_path, img_dir:str, feature_json_path:str, is_load_library:bool=True):
+  def __init__(self, ckpt_path, img_dir:str, feature_json_path:str, is_load_library:bool=True, user_config:UserConfig=None):
     """
     歌曲识别器
     Args:
@@ -31,6 +30,36 @@ class SongRecognition:
     
     # 加载或创建特征检索库
     self.feature_library = self._load_or_create_feature_library(is_load_library)
+    
+    self.uc = user_config
+    
+  def get_id_by_full_img(self, full_img):
+    # 选歌界面有选择难度的情况，即 FIX 的情况
+    is_fix = self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)
+    x1,y1,x2,y2 = STD_LEVEL_FIX_TITLE_REGION if is_fix else STD_LEVEL_UNFIX_TITLE_REGION
+    g_img = cv2.cvtColor(full_img[x1:x2, y1:y2], cv2.COLOR_BGR2GRAY)
+    
+    song_id = self.get_id(g_img)
+    
+    # BangDream 全游目前仅有两对同名不同谱的歌曲，但部分难度的 Level 不同，未来将在此根据 level 特殊处理
+    # 无法区分的情况仅在 Hard 及以下难度出现，一般不在使用脚本时出现，故不进一步区分
+    x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
+    g_img = cv2.cvtColor(full_img[x1:x2, y1:y2], cv2.COLOR_BGR2GRAY)
+    level = -1 # self.get_level(g_img)
+    if song_id == 410: # 410 难度 26 21 14 8
+      if \
+        (self.uc.level == Level.Expert and level == 27) or \
+        (self.uc.level == Level.Hard   and level == 22) or \
+        (self.uc.level == Level.Hard   and level == 14) or \
+        (self.uc.level == Level.Hard   and level ==  8): song_id = 467
+    if song_id == 462: # 462 难度 25 21 14 7
+      if \
+        (self.uc.level == Level.Expert and level == 26) or \
+        (self.uc.level == Level.Hard   and level == 21) or \
+        (self.uc.level == Level.Hard   and level == 13) or \
+        (self.uc.level == Level.Hard   and level ==  8): song_id = 389
+    
+    return song_id
   
   def _load_or_create_feature_library(self, is_load:bool = True):
     """加载或创建特征检索库"""
@@ -85,18 +114,8 @@ class SongRecognition:
       feature: 128维特征向量 (numpy数组)
     """
     # 确保图像尺寸正确
-    if img.shape != (36, 450):
-      img = cv2.resize(img, (450, 36))
-    
-    # 应用阈值160的mask
-    _, thresholded = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY)
-    
-    # 归一化到[0,1]
-    normalized = thresholded.astype(np.float32) / 255.0
-    
-    # 添加批次和通道维度 [1, 1, H, W]
-    input_tensor = torch.from_numpy(normalized).unsqueeze(0).unsqueeze(0)
-    input_tensor = input_tensor.to(self.device)
+      
+    input_tensor = prepocess_img(img).to(self.device).unsqueeze(0)
     
     # 提取特征
     with torch.no_grad():
@@ -216,14 +235,14 @@ class SongRecognition:
     return similarities[:top_k]
 
 if __name__ == '__main__':
-  ckpt_path = './song_recognition/ckpt_arcface.ckpt'
-  #'./song_recognition/ckpt_triplet.ckpt'
+  ckpt_path = './song_recognition/ckpt_triplet.pth'
   
   # 初始化识别器
-  recog = SongRecognition(
-    model_path=ckpt_path,
+  recognizer = SongRecognition(
+    ckpt_path=ckpt_path,
     img_dir='./song_recognition/title_imgs',
-    feature_json_path='./song_recognition/feature_vectors.json'
+    feature_json_path='./song_recognition/feature_vectors.json',
+    is_load_library=False
   )
   
   # 示例1: 添加新歌曲
@@ -231,11 +250,12 @@ if __name__ == '__main__':
   # print(f"新歌曲ID: {new_id}")
   
   # 示例2: 识别歌曲
-  # query_img = cv2.imread('./query.png', cv2.IMREAD_GRAYSCALE)
+  # query_img = cv2.imread('./song_recognition/title_imgs/t-410.png', cv2.IMREAD_GRAYSCALE)
   # song_id, similarity = recognizer.get_id(query_img)
   # print(f"识别结果: 歌曲ID {song_id}, 相似度 {similarity:.4f}")
   
   # 示例3: 获取最相似的几首歌曲
-  # similar_songs = recognizer.get_similar_songs(query_img, top_k=3)
-  # for song_id, sim in similar_songs:
-  #     print(f"歌曲ID: {song_id}, 相似度: {sim:.4f}")
+  query_img = cv2.imread('./song_recognition/title_imgs/t-462.png', cv2.IMREAD_GRAYSCALE)
+  similar_songs = recognizer.get_similar_songs(query_img, top_k=3)
+  for song_id, sim in similar_songs:
+      print(f"歌曲ID: {song_id}, 相似度: {sim:.4f}")

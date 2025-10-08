@@ -71,8 +71,6 @@ class Script:
       'tour':          lambda : self.click( 440, 450) if self.uc.event_config['lobby'] == 'event' else \
                                 self.click( 840, 450),
       'tour_choose':   lambda : self.click(1080, 620),
-      
-      
     }
     
   def _ready(self):

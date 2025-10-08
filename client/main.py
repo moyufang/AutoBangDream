@@ -4,7 +4,7 @@ from utils.ADB import push_file
 from utils.json_refiner import refine
 from utils.log import LogE, LogD, LogI, LogS
 from UI_recognition.predict import UIRecognition
-from song_recognition.predict import SongRecognition
+from song_recognition.predict_TitleNet import SongRecognition
 from client.player import Player
 from client.script import Script
 from client.sheet2commands import sheet2commands
@@ -80,7 +80,7 @@ while True:
   else: last_state = state; same_state_count = 1; 
   
   if state == 'ready':
-    song_id, song_name = song_recognition.get_song(th_img)
+    song_id, song_name = song_recognition.get_song_id(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name}')
     
     sheet_path = sheets_path+f'{song_id}_{user_config.level}.bestdori'

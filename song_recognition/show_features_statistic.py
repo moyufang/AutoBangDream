@@ -5,9 +5,41 @@ from pathlib import Path
 import random
 import sys
 import os
+import torch
 
 # 添加路径
 from song_recognition.predict_TitleNet import SongRecognition
+
+
+def analyze_all_feature_similarity(recognizer, img_dir):
+  img_dir = Path(img_dir)
+  img_paths = list(img_dir.glob('t-*.png'))
+  features = []
+  for img_path in img_paths:
+    img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+    features.append(torch.from_numpy(recognizer.get_feature(img)))
+  n = len(features)
+  features = torch.stack(features)
+  
+  # 扩展维度以便广播
+  x1_expanded = features.unsqueeze(1)  # [m, 1, d]
+  x2_expanded = features.unsqueeze(0)  # [1, n, d]
+  
+  # 计算所有对之间的余弦相似度
+  cosine_sim = torch.nn.functional.cosine_similarity(x1_expanded, x2_expanded, dim=2)
+  
+  similarities = []
+  min_similarity = 1.0  # 初始化最小相似度
+  count, max_count = 0, n*(n-1)//2
+  for i in range(n):
+    for j in range(i+1, n):
+      similarity = cosine_sim[i][j].item()
+      similarities.append(similarity)
+      if similarity < min_similarity: min_similarity = similarity
+      
+      if count+1 % 100 == 0:
+        print(f"已完成 {count + 1}/{max_count} 对分析...")
+  return similarities, min_similarity
 
 def analyze_feature_similarity(recognizer, img_dir, num_pairs=2048):
     """
@@ -111,8 +143,7 @@ def plot_similarity_distribution(similarities, min_similarity):
     return similarities
 
 def main():
-    if False: ckpt_path = './song_recognition/ckpt_arcface.pth'
-    else: ckpt_path = './song_recognition/ckpt_triplet.pth'
+    ckpt_path = './song_recognition/ckpt_triplet.pth'
     
     """主函数"""
     # 初始化识别器
@@ -124,10 +155,9 @@ def main():
     )
     
     # 分析特征相似度
-    similarities, min_similarity = analyze_feature_similarity(
+    similarities, min_similarity = analyze_all_feature_similarity(
         recognizer, 
         './song_recognition/title_imgs', 
-        num_pairs=100
     )
     
     # 输出最小相似度

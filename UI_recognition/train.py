@@ -132,9 +132,9 @@ def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
 Net = BangUiNet
 model_name = "BangUINet"
 batch_size = 64 
-epoches = 20
+epoches = 40
 up_labels = ['award', 'award_again', 'ready', 'ready_done'] 
-is_load_new_model = True
+is_load_new_model = False
 
 #============ train ============#
  
@@ -149,7 +149,7 @@ nnw = Net(dataset.classes_num)
 if is_load_new_model:
   nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
 else:
-  nnw = th.load(model_path)
+  nnw = th.load(model_path, weights_only=False)
 
 n = dataset.datasets.size(0)
 weight_acum = dataset.weight.copy()
