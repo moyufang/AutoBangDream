@@ -210,8 +210,10 @@ def train():
   ckpt_path = f'./song_recognition/ckpt_triplet.pth'
   
   # 训练参数
-  is_load = False
-  num_epochs = 50
+  is_load = True
+  num_epochs = 60
+  learning_rate = 1e-2
+  lr_decay = 1e-4
   accumulation_steps = 4  # 梯度累积
   min_loss = 1e6
   batch_classes = 32
@@ -224,8 +226,8 @@ def train():
   # 模型、损失函数、优化器、调度器
   model = TitleNet(num_classes=len(dataset)).to(device)
   criterion = TripletLoss(margin=0.2)
-  optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
-  scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+  optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+  scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
 
   if is_load:
     ckpt = torch.load(ckpt_path)
@@ -242,7 +244,7 @@ def train():
     # 每个epoch处理足够的批次
     num_batches = max(100, len(dataset) // (batch_maker.t * batch_maker.a))
     
-    print_batch = num_batches//8
+    print_batch = num_batches//4
     
     for batch_idx in range(num_batches):
       start_time = time.time()
@@ -259,21 +261,30 @@ def train():
       if not triplets:continue
           
       # 计算三元组损失
-      total_loss = 0
-      for anchor_idx, positive_idx, negative_idx in triplets:
-        anchor = features[anchor_idx]
-        positive = features[positive_idx] 
-        negative = features[negative_idx]
+      # total_loss = 0
+      # for anchor_idx, positive_idx, negative_idx in triplets:
+      #   anchor = features[anchor_idx]
+      #   positive = features[positive_idx] 
+      #   negative = features[negative_idx]
         
-        loss = criterion(anchor.unsqueeze(0), positive.unsqueeze(0), negative.unsqueeze(0))
-        total_loss += loss
+      #   loss = criterion(anchor.unsqueeze(0), positive.unsqueeze(0), negative.unsqueeze(0))
+      #   total_loss += loss
+     
+      
+      anchor, positive, negative = [], [], []
+      for anchor_idx, positive_idx, negative_idx in triplets:
+        anchor.append(features[anchor_idx])
+        positive.append(features[positive_idx])
+        negative.append(features[negative_idx])
+      anchor, positive, negative = torch.stack(anchor), torch.stack(positive), torch.stack(negative)
+      
+      avg_loss = criterion(anchor, positive, negative)
+      
       batch_time = time.time()-start_time
       
       if len(triplets) > 0:
-        total_loss = total_loss / len(triplets)
-        
         # 梯度累积
-        total_loss = total_loss / accumulation_steps
+        total_loss = avg_loss / accumulation_steps
         total_loss.backward()
         
         if (batch_idx + 1) % accumulation_steps == 0:
@@ -281,15 +292,15 @@ def train():
           optimizer.zero_grad()
         
         if (batch_idx+1)%print_batch == 0:
-          print(f"batch_idx:{batch_idx}/{batch_classes} batch_loss:{total_loss.item() * accumulation_steps:.6f} batch_time:{batch_time:.4f}")
+          print(f"Batch: [{batch_idx}/{num_batches}] Loss: {total_loss.item()*accumulation_steps:.6f} Batch Time per: {batch_time:.4f}")
         
-        running_loss += total_loss.item() * accumulation_steps
+        running_loss += avg_loss.item()
     
     scheduler.step()
     
     # 打印统计信息
-    avg_loss = running_loss / num_batches
-    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
+    epoch_loss = running_loss / num_batches
+    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
     
     # 每1个epoch保存一次模型(如果更优)
     if avg_loss < min_loss and (epoch + 1) % 1 == 0:

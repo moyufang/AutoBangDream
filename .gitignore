@@ -10,6 +10,8 @@ __pycache__/
 UI_recognition/BangUINet.pth
 UI_recognition/change_img_title.py
 
+song_recognition/feature_vectors.json
+
 temp.py
 tmp.py
 tempCodeRunnerFile.py

@@ -7,7 +7,7 @@ import sys
 import os
 
 # 添加路径
-from song_recognition.predict import SongRecognizer
+from song_recognition.predict_TitleNet import SongRecognition
 
 def analyze_feature_similarity(recognizer, img_dir, num_pairs=2048):
     """
@@ -70,6 +70,9 @@ def plot_similarity_distribution(similarities, min_similarity):
         similarities: 相似度列表
         min_similarity: 最小相似度
     """
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+    
     # 转换为numpy数组
     similarities = np.array(similarities)
     
@@ -108,19 +111,25 @@ def plot_similarity_distribution(similarities, min_similarity):
     return similarities
 
 def main():
+    if False:
+      model_path = './song_recognition/ckpt_arcface.pth'
+    else:
+      model_path = './song_recognition/ckpt_triplet.pth'
+    
     """主函数"""
     # 初始化识别器
-    recognizer = SongRecognizer(
-        model_path='./song_recognition/TitleNet.ckpt',
+    recognizer = SongRecognition(
+        model_path=model_path,
         img_dir='./song_recognition/title_imgs',
-        feature_json_path='./song_recognition/feature_vectors.json'
+        feature_json_path='./song_recognition/feature_vectors.json',
+        is_load_library=False
     )
     
     # 分析特征相似度
     similarities, min_similarity = analyze_feature_similarity(
         recognizer, 
         './song_recognition/title_imgs', 
-        num_pairs=2048
+        num_pairs=100
     )
     
     # 输出最小相似度

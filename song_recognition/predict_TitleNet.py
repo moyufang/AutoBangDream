@@ -12,7 +12,7 @@ from song_recognition.train_triplet import TripletLoss
 from utils.log import LogI, LogE, LogD, LogE
 
 class SongRecognition:
-  def __init__(self, model_path, img_dir:str, feature_json_path:str):
+  def __init__(self, model_path, img_dir:str, feature_json_path:str, is_load_library:bool=True):
     """
     歌曲识别器
     Args:
@@ -29,7 +29,7 @@ class SongRecognition:
     self.model.eval()
     
     # 加载或创建特征检索库
-    self.feature_library = self._load_or_create_feature_library()
+    self.feature_library = self._load_or_create_feature_library(is_load_library)
   
   def _load_model(self, model_path):
     """加载训练好的模型"""

@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 from pathlib import Path
 import numpy as np
-from PIL import Image
+import cv2
 import random
 import time
 
@@ -39,8 +39,8 @@ class SongTitleDataset(Dataset):
         label = self.label_dict[img_path.stem]
         
         # 加载灰度图像
-        img = Image.open(img_path).convert('L')
-        img = img.resize((self.img_size[1], self.img_size[0]))  # (width, height)
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        img = 255-img
         
         # 转换为numpy数组并归一化到[0,1]
         img = np.array(img, dtype=np.float32) / 255.0
@@ -102,12 +102,10 @@ class BatchMaker:
         Returns:
             增强后的图像
         """
-        # 将图像转换到0-255范围
-        img_255 = img * 255.0
         
         # 应用阈值二值化
         threshold_normalized = threshold / 255.0
-        augmented = (img_255 > threshold_normalized).float()
+        augmented = (img > threshold_normalized).float()
         
         # 添加少量噪声
         noise = torch.randn_like(augmented) * 0.01
@@ -144,9 +142,8 @@ class ArcFaceLoss(nn.Module):
             loss: ArcFace损失
         """
         # 归一化特征和权重
-        self.F = features.shape[-1]
-        features = F.normalize(features*self.F, p=2, dim=1)
-        W = F.normalize(self.W*self.F, p=2, dim=1)
+        features = F.normalize(features, p=2, dim=1)
+        W = F.normalize(self.W, p=2, dim=1)
         
         # 计算余弦相似度
         cosine = F.linear(features, W)  # [batch_size, num_classes]
@@ -202,7 +199,7 @@ def train_epoch(model, batch_maker, criterion, optimizer, device, batch_classes=
         total_loss += loss.item()
         batch_time = time.time()-start_time
         if (batch_idx+1)%print_idx == 0 or batch_idx == num_batches-1:
-          print(f'Batch [{batch_idx+1}/{num_batches}], Loss: {loss.item():.4f} batch_time:{batch_time:.4f}')
+          print(f'Batch [{batch_idx+1}/{num_batches}] Loss: {loss.item():.4f} Batch Time per: {batch_time:.4f}')
     
     avg_loss = total_loss / num_batches
     return avg_loss
@@ -212,15 +209,16 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'使用设备: {device}')
     
-    ckpt_path = f'./song_recognition/ckpt_arcface_train.pth'
+    ckpt_path = f'./song_recognition/ckpt_arcface.pth'
     img_dir = './song_recognition/title_imgs'
     
-    is_load = False
+    is_load = True
     num_classes = -1
     feature_dim = 128
     batch_classes = 64
-    num_epochs = 20
+    num_epochs = 60
     learning_rate = 1e-2
+    lr_decay = 1e-4
     arcface_margin = 0.5
     
     # 创建数据集和batch生成器
@@ -231,24 +229,25 @@ def main():
     # batch_classes = get_batch_size(batch_classes, num_classes)
     print(f"num_classes:{num_classes} batch_classes:{batch_classes}")
     
-    # 创建模型
-    if is_load:
-      ckpt = torch.load(ckpt_path)
-      model = TitleNet(num_classes=num_classes)
-      model.load_state_dict(ckpt['model_state_dict'])
-    else:
-      model = TitleNet(num_classes=num_classes).to(device)
+   # 创建模型
+    model = TitleNet(num_classes=num_classes).to(device)
     
     # 创建损失函数和优化器
     criterion = ArcFaceLoss(feature_dim, num_classes, margin=arcface_margin)
-    if is_load: criterion.load_state_dict(ckpt['criterion_state_dict'])
     optimizer = optim.AdamW([
         {'params': model.parameters()},
         {'params': criterion.parameters()}
     ], lr=learning_rate, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    
+    if is_load:
+      ckpt = torch.load(ckpt_path)
+      model = TitleNet(num_classes=num_classes)
+      model.load_state_dict(ckpt['model_state_dict'])
+      criterion.load_state_dict(ckpt['criterion_state_dict'])
     
     # 学习率调度器
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    
     
     min_loss = 10000
     
