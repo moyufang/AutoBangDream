@@ -1,153 +1,151 @@
 import torch
 import torch.nn as nn
+import torchvision
+import torchvision.models as models
 import torch.nn.functional as F
-import math
-
-class hswish(nn.Module):
-  def forward(self, x):
-    out = x * F.relu6(x + 3, inplace=True) / 6
-    return out
-
-class hsigmoid(nn.Module):
-  def forward(self, x):
-    out = F.relu6(x + 3, inplace=True) / 6
-    return out
-
-class SeModule(nn.Module):
-  def __init__(self, in_size, reduction=4):
-    super(SeModule, self).__init__()
-    self.se = nn.Sequential(
-      nn.AdaptiveAvgPool2d(1),
-      nn.Conv2d(in_size, in_size // reduction, kernel_size=1, stride=1, padding=0, bias=False),
-      nn.BatchNorm2d(in_size // reduction),
-      nn.ReLU(inplace=True),
-      nn.Conv2d(in_size // reduction, in_size, kernel_size=1, stride=1, padding=0, bias=False),
-      nn.BatchNorm2d(in_size),
-      hsigmoid()
-    )
-
-  def forward(self, x):
-    return x * self.se(x)
-
-class Block(nn.Module):
-  def __init__(self, kernel_size, in_size, expand_size, out_size, nolinear, semodule, stride):
-    super(Block, self).__init__()
-    self.stride = stride
-    self.se = semodule
-
-    self.conv1 = nn.Conv2d(in_size, expand_size, kernel_size=1, stride=1, padding=0, bias=False)
-    self.bn1 = nn.BatchNorm2d(expand_size)
-    self.nolinear1 = nolinear
-    self.conv2 = nn.Conv2d(expand_size, expand_size, kernel_size=kernel_size, stride=stride, 
-                          padding=kernel_size//2, groups=expand_size, bias=False)
-    self.bn2 = nn.BatchNorm2d(expand_size)
-    self.nolinear2 = nolinear
-    self.conv3 = nn.Conv2d(expand_size, out_size, kernel_size=1, stride=1, padding=0, bias=False)
-    self.bn3 = nn.BatchNorm2d(out_size)
-
-    self.shortcut = nn.Sequential()
-    if stride == 1 and in_size != out_size:
-      self.shortcut = nn.Sequential(
-        nn.Conv2d(in_size, out_size, kernel_size=1, stride=1, padding=0, bias=False),
-        nn.BatchNorm2d(out_size),
-      )
-
-  def forward(self, x):
-    out = self.nolinear1(self.bn1(self.conv1(x)))
-    out = self.nolinear2(self.bn2(self.conv2(out)))
-    out = self.bn3(self.conv3(out))
-    if self.se is not None:
-      out = self.se(out)
-    out = out + self.shortcut(x) if self.stride==1 else out
-    return out
-
-class MobileNetV3_Small(nn.Module):
-  def __init__(self, num_classes=1000):
-    super(MobileNetV3_Small, self).__init__()
-    self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1, bias=False)
-    self.bn1 = nn.BatchNorm2d(16)
-    self.hs1 = hswish()
-
-    self.bneck = nn.Sequential(
-      Block(3, 16, 16, 16, nn.ReLU(inplace=True), SeModule(16), 2),
-      Block(3, 16, 72, 24, nn.ReLU(inplace=True), None, 2),
-      Block(3, 24, 88, 24, nn.ReLU(inplace=True), None, 1),
-      Block(5, 24, 96, 40, hswish(), SeModule(40), 2),
-      Block(5, 40, 240, 40, hswish(), SeModule(40), 1),
-      Block(5, 40, 240, 40, hswish(), SeModule(40), 1),
-      Block(5, 40, 120, 48, hswish(), SeModule(48), 1),
-      Block(5, 48, 144, 48, hswish(), SeModule(48), 1),
-      Block(5, 48, 288, 96, hswish(), SeModule(96), 2),
-      Block(5, 96, 576, 96, hswish(), SeModule(96), 1),
-      Block(5, 96, 576, 96, hswish(), SeModule(96), 1),
-    )
-
-    self.conv2 = nn.Conv2d(96, 576, kernel_size=1, stride=1, padding=0, bias=False)
-    self.bn2 = nn.BatchNorm2d(576)
-    self.hs2 = hswish()
-    
-    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-    
-    # 特征提取部分
-    self.feature = nn.Sequential(
-      nn.Linear(576, 256),
-      nn.BatchNorm1d(256),
-      hswish(),
-      nn.Dropout(0.2),
-      nn.Linear(256, 128),
-    )
-    
-    self._initialize_weights()
-
-  def forward(self, x):
-    out = self.hs1(self.bn1(self.conv1(x)))
-    out = self.bneck(out)
-    out = self.hs2(self.bn2(self.conv2(out)))
-    out = self.avgpool(out)
-    out = out.view(out.size(0), -1)
-    out = self.feature(out)
-    return out
-
-  def _initialize_weights(self):
-    for m in self.modules():
-      if isinstance(m, nn.Conv2d):
-        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-        if m.bias is not None:
-          nn.init.constant_(m.bias, 0)
-      elif isinstance(m, nn.BatchNorm2d):
-        nn.init.constant_(m.weight, 1)
-        nn.init.constant_(m.bias, 0)
-      elif isinstance(m, nn.Linear):
-        nn.init.normal_(m.weight, 0, 0.01)
-        if m.bias is not None:
-          nn.init.constant_(m.bias, 0)
-
-class L2Norm(nn.Module):
-  def __init__(self, dim=1):
-    super(L2Norm, self).__init__()
-    self.dim = dim
-      
-  def forward(self, x):
-    return F.normalize(x, p=2, dim=self.dim)
+import time
 
 class TitleNet(nn.Module):
-  def __init__(self, num_classes=1000):
+  def __init__(self, feature_dim=128, backbone_type:int=0):
+    """
+    Args:
+        feature_dim: 特征向量维度
+        backbone_type:  backbone 模型选择
+                        0 -> mobilenet_v3_small
+                        1 -> efficientnet_b0
+                        2 -> shufflenet_v2
+                        3 -> squeezenet
+                        4 -> ghostnet
+    """
+    
     super(TitleNet, self).__init__()
-    self.backbone = MobileNetV3_Small(num_classes)
-    self.l2_norm = L2Norm(dim=1)
+    
+    if backbone_type == 0: model = self.create_mobilenet_v3_small(feature_dim)
+    elif backbone_type == 1: model = self.create_efficientnet_b0(feature_dim)
+    elif backbone_type == 2: model = self.create_shufflenet_v2(feature_dim)
+    elif backbone_type == 3: model = self.create_squeezenet(feature_dim)
+    elif backbone_type == 4: model = self.create_ghost(feature_dim)
+    
+    self.backbone = model
+    self.feature_dim = feature_dim
+    self.backbone_type = backbone_type
       
   def forward(self, x):
     features = self.backbone(x)
-    normalized_features = self.l2_norm(features)
+    normalized_features = F.normalize(features, p=2, dim=1)
     return normalized_features
 
   def extract_features(self, x):
     """提取L2归一化后的特征向量"""
     return self.forward(x)
+  
+  def create_mobilenet_v3_small(self, num_classes=128, in_channels=1):
+    # 加载预训练模型
+    
+    model = models.mobilenet_v3_small(pretrained=True)
+    
+    # 修改第一层卷积，适应灰度图像 (1通道)
+    original_first_conv = model.features[0][0]
+    model.features[0][0] = nn.Conv2d(
+      in_channels=in_channels,  # 改为1通道输入
+      out_channels=original_first_conv.out_channels,
+      kernel_size=original_first_conv.kernel_size,
+      stride=original_first_conv.stride,
+      padding=original_first_conv.padding,
+      bias=original_first_conv.bias is not None
+    )
+    
+    # 初始化新卷积层的权重（使用原RGB通道的均值）
+    with torch.no_grad():
+      # 对原3通道权重取平均，扩展到1通道
+      new_weight = original_first_conv.weight.mean(dim=1, keepdim=True)
+      model.features[0][0].weight.copy_(new_weight)
+      if original_first_conv.bias is not None:
+          model.features[0][0].bias.copy_(original_first_conv.bias)
+    
+    # 修改分类器，输出128分类
+    in_features = model.classifier[-1].in_features
+    model.classifier[-1] = nn.Linear(in_features, num_classes)
+    
+    return model
+
+  def create_efficientnet_b0(self, num_classes=128, in_channels=1):
+    model = models.efficientnet_b0(pretrained=True)
+    
+    # 修改第一层适应灰度输入
+    original_conv = model.features[0][0]
+    model.features[0][0] = nn.Conv2d(
+        in_channels=in_channels,
+        out_channels=original_conv.out_channels,
+        kernel_size=original_conv.kernel_size,
+        stride=original_conv.stride,
+        padding=original_conv.padding,
+        bias=original_conv.bias is not None
+    )
+    
+    # 初始化新权重
+    with torch.no_grad():
+        new_weight = original_conv.weight.mean(dim=1, keepdim=True)
+        model.features[0][0].weight.copy_(new_weight)
+    
+    # 修改分类器
+    in_features = model.classifier[1].in_features
+    model.classifier[1] = nn.Linear(in_features, num_classes)
+    
+    return model
+
+  def create_shufflenet_v2(self, num_classes=128, in_channels=1):
+    model = torchvision.models.shufflenet_v2_x1_0(pretrained=True)
+    
+    # 修改第一层
+    original_conv = model.conv1[0]
+    model.conv1[0] = nn.Conv2d(
+      in_channels=in_channels,
+      out_channels=original_conv.out_channels,
+      kernel_size=original_conv.kernel_size,
+      stride=original_conv.stride,
+      padding=original_conv.padding,
+      bias=original_conv.bias is not None
+    )
+    
+    # 初始化权重
+    with torch.no_grad():
+      new_weight = original_conv.weight.mean(dim=1, keepdim=True)
+      model.conv1[0].weight.copy_(new_weight)
+    
+    # 修改分类器
+    in_features = model.fc.in_features
+    model.fc = nn.Linear(in_features, num_classes)
+    
+    return model
+  
+  def create_squeezenet(self, num_classes=128, in_channels=1):
+    model = torchvision.models.squeezenet1_1(pretrained=True)
+    
+    # 修改第一层
+    model.features[0] = nn.Conv2d(
+        in_channels, 64, kernel_size=3, stride=2, padding=1
+    )
+    
+    # 修改分类器
+    model.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=1)
+    model.num_classes = num_classes
+    
+    return model
+
+  def create_ghost(self, num_classes=128, in_channels=1):
+    from song_recognition.GhostNet import GhostNet
+    return GhostNet(num_classes, in_channels)
+
+def load_TitleNet(ckpt_path:str):
+  ckpt = torch.load(ckpt_path)
+  model = TitleNet(ckpt['feature_dim'], ckpt['backbone_type'])
+  model.load_state_dict(ckpt['model_state_dict'])
+  return model
 
 if __name__ == "__main__":
   """测试模型结构和输出维度"""
-  model = TitleNet()
+  model = TitleNet(backbone_type=4)
   
   # 创建符合输入尺寸的测试数据 (36x450 灰度图)
   batch_size = 4
@@ -158,9 +156,11 @@ if __name__ == "__main__":
   print(f"\n输入尺寸: {test_input.shape}")
   
   with torch.no_grad():
+    start_time = time.time()
     output = model(test_input)
+    inference_time = time.time()-start_time
     print(f"输出特征维度: {output.shape}")
-    print(f"特征范数: {torch.norm(output, dim=1)}")  # 应该接近1.0
+    print(f"推理时间: {inference_time} 特征范数: {torch.norm(output, dim=1)}")  # 应该接近1.0
 
   # 统计参数量
   total_params = sum(p.numel() for p in model.parameters())

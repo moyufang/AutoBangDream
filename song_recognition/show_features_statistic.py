@@ -111,15 +111,13 @@ def plot_similarity_distribution(similarities, min_similarity):
     return similarities
 
 def main():
-    if False:
-      model_path = './song_recognition/ckpt_arcface.pth'
-    else:
-      model_path = './song_recognition/ckpt_triplet.pth'
+    if False: ckpt_path = './song_recognition/ckpt_arcface.pth'
+    else: ckpt_path = './song_recognition/ckpt_triplet.pth'
     
     """主函数"""
     # 初始化识别器
     recognizer = SongRecognition(
-        model_path=model_path,
+        ckpt_path=ckpt_path,
         img_dir='./song_recognition/title_imgs',
         feature_json_path='./song_recognition/feature_vectors.json',
         is_load_library=False

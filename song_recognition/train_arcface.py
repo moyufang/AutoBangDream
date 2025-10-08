@@ -114,7 +114,7 @@ class BatchMaker:
         return augmented
 
 class ArcFaceLoss(nn.Module):
-    def __init__(self, feature_dim, num_classes, margin=0.5, scale=64.0):
+    def __init__(self, feature_dim, num_classes, margin=0.5, scale_factor=64.0):
         """
         ArcFace损失函数
         Args:
@@ -127,7 +127,7 @@ class ArcFaceLoss(nn.Module):
         self.feature_dim = feature_dim
         self.num_classes = num_classes
         self.margin = torch.tensor(margin)
-        self.scale = scale
+        self.scale_factor = scale_factor
         
         # 权重矩阵
         self.W = nn.Parameter(torch.FloatTensor(num_classes, feature_dim))
@@ -158,7 +158,7 @@ class ArcFaceLoss(nn.Module):
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         
         # 缩放
-        output *= self.scale
+        output *= self.scale_factor
         
         # 计算交叉熵损失
         loss = F.cross_entropy(output, labels)
@@ -174,103 +174,106 @@ def get_batch_size(s:int, n:int):
   return n
 
 def train_epoch(model, batch_maker, criterion, optimizer, device, batch_classes=32, num_batches=32):
-    """训练一个epoch"""
-    model.train()
-    total_loss = 0
-    
-    print_idx = num_batches//4
-    
-    for batch_idx in range(num_batches):
-        start_time = time.time()
-        # 生成一个batch
-        batch_imgs, batch_labels = batch_maker.create_batch(batch_classes)
-        batch_imgs = batch_imgs.to(device)
-        batch_labels = batch_labels.to(device)
-        
-        # 前向传播
-        optimizer.zero_grad()
-        features = model(batch_imgs)
-        loss = criterion(features, batch_labels)
-        
-        # 反向传播
-        loss.backward()
-        optimizer.step()
-        
-        total_loss += loss.item()
-        batch_time = time.time()-start_time
-        if (batch_idx+1)%print_idx == 0 or batch_idx == num_batches-1:
-          print(f'Batch [{batch_idx+1}/{num_batches}] Loss: {loss.item():.4f} Batch Time per: {batch_time:.4f}')
-    
-    avg_loss = total_loss / num_batches
-    return avg_loss
+  """训练一个epoch"""
+  model.train()
+  total_loss = 0
+  
+  print_idx = num_batches//4
+  
+  for batch_idx in range(num_batches):
+      start_time = time.time()
+      # 生成一个batch
+      batch_imgs, batch_labels = batch_maker.create_batch(batch_classes)
+      batch_imgs = batch_imgs.to(device)
+      batch_labels = batch_labels.to(device)
+      
+      # 前向传播
+      optimizer.zero_grad()
+      features = model(batch_imgs)
+      loss = criterion(features, batch_labels)
+      
+      # 反向传播
+      loss.backward()
+      optimizer.step()
+      
+      total_loss += loss.item()
+      batch_time = time.time()-start_time
+      if (batch_idx+1)%print_idx == 0 or batch_idx == num_batches-1:
+        print(f'Batch [{batch_idx+1}/{num_batches}] Loss: {loss.item():.4f} Batch Time per: {batch_time:.4f}')
+  
+  avg_loss = total_loss / num_batches
+  return avg_loss
 
-def main():
-    # 配置参数
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f'使用设备: {device}')
+def train():
+  # 配置参数
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  print(f"Using device: {device}")
+  
+  ckpt_path = f'./song_recognition/ckpt_arcface.pth'
+  img_dir = './song_recognition/title_imgs'
+  
+  # 训练参数
+  is_load = False
+  num_epochs = 60
+  num_batches = 72
+  batch_classes = 64
+  learning_rate = 1e-2
+  arcface_margin = 0.5
+  scale_factor = 64.0
+  num_classes = -1
+  feature_dim = 128
+  backbone_type = 4
+  min_loss = 1e6
+  
+  if is_load: ckpt = torch.load(ckpt_path)
+  
+  # 创建数据集和batch生成器
+  dataset = SongTitleDataset(img_dir)
+  batch_maker = BatchMaker(dataset)
+  num_classes = len(dataset)
+  print(f"num_classes:{num_classes} batch_classes:{batch_classes}")
+  
+  # 创建模型
+  if not is_load:
+    model = TitleNet(feature_dim, backbone_type).to(device)
+  else:
+    model = TitleNet(ckpt['feature_dim'], ckpt['backbone_type'])
+    model.load_state_dict(ckpt['model_state_dict'])
+    min_loss = ckpt_path['loss']
+  
+  # 创建损失函数
+  criterion = ArcFaceLoss(feature_dim, num_classes, margin=arcface_margin, scale_factor=scale_factor)
+  if is_load: criterion.load_state_dict(ckpt['criterion_state_dict'])
     
-    ckpt_path = f'./song_recognition/ckpt_arcface.pth'
-    img_dir = './song_recognition/title_imgs'
+  #优化器和调度器
+  optimizer = optim.AdamW([
+      {'params': model.parameters()},
+      {'params': criterion.parameters()}
+  ], lr=learning_rate, weight_decay=1e-4)
+  scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+  
+  # 训练循环
+  print("开始训练...")
+  for epoch in range(1, num_epochs + 1):
+    avg_loss = train_epoch(model, batch_maker, criterion, optimizer, device, batch_classes, num_batches)
     
-    is_load = True
-    num_classes = -1
-    feature_dim = 128
-    batch_classes = 64
-    num_epochs = 60
-    learning_rate = 1e-2
-    lr_decay = 1e-4
-    arcface_margin = 0.5
+    # 更新学习率
+    scheduler.step()
     
-    # 创建数据集和batch生成器
-    dataset = SongTitleDataset(img_dir)
-    batch_maker = BatchMaker(dataset)
-    num_classes = len(dataset)
-    num_batches = 72
-    # batch_classes = get_batch_size(batch_classes, num_classes)
-    print(f"num_classes:{num_classes} batch_classes:{batch_classes}")
+    print(f'Epoch [{epoch}/{num_epochs}], Average Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
     
-   # 创建模型
-    model = TitleNet(num_classes=num_classes).to(device)
-    
-    # 创建损失函数和优化器
-    criterion = ArcFaceLoss(feature_dim, num_classes, margin=arcface_margin)
-    optimizer = optim.AdamW([
-        {'params': model.parameters()},
-        {'params': criterion.parameters()}
-    ], lr=learning_rate, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
-    
-    if is_load:
-      ckpt = torch.load(ckpt_path)
-      model = TitleNet(num_classes=num_classes)
-      model.load_state_dict(ckpt['model_state_dict'])
-      criterion.load_state_dict(ckpt['criterion_state_dict'])
-    
-    # 学习率调度器
-    
-    
-    min_loss = 10000
-    
-    # 训练循环
-    print("开始训练...")
-    for epoch in range(1, num_epochs + 1):
-      avg_loss = train_epoch(model, batch_maker, criterion, optimizer, device, batch_classes, num_batches)
-      
-      # 更新学习率
-      scheduler.step()
-      
-      print(f'Epoch [{epoch}/{num_epochs}], Average Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
-      
-      # 每1个epoch保存一次模型
-      if avg_loss < min_loss:
-        min_loss = avg_loss
-        torch.save({
-          'model_state_dict': model.state_dict(),
-          'optimizer_state_dict': optimizer.state_dict(),
-          'criterion_state_dict': criterion.state_dict(),
-          'loss': avg_loss,
-        }, ckpt_path)
-        print(f'模型已保存: {ckpt_path}')
+    # 每1个epoch保存一次模型
+    if avg_loss < min_loss:
+      min_loss = avg_loss
+      torch.save({
+        'backbone_type': model.backbone_type,
+        'feature_dim': model.feature_dim,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'criterion_state_dict': criterion.state_dict(),
+        'loss': avg_loss,
+      }, ckpt_path)
+      print(f'模型已保存: {ckpt_path}')
 
 if __name__ == '__main__':
-    main()
+  train()

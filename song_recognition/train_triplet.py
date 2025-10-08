@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 from pathlib import Path
@@ -190,11 +191,20 @@ class BatchMaker:
     return triplets
 
 class TripletLoss(nn.Module):
-  def __init__(self, margin=0.2):
+  def __init__(self, margin=0.2, scale_factor=64.0):
     super(TripletLoss, self).__init__()
-    self.margin = margin
+    self.margin = margin * scale_factor
+    self.scale_factor = scale_factor
+    
+  def normalize(self, x):
+    x = F.normalize(x, p=2, dim=1) * self.scale_factor  # L2归一化
+    return x
       
   def forward(self, anchor, positive, negative):
+    anchor = self.normalize(anchor)
+    positive = self.normalize(positive)
+    negative = self.normalize(negative)
+    
     d_ap = torch.pairwise_distance(anchor, positive, p=2)
     d_an = torch.pairwise_distance(anchor, negative, p=2)
     
@@ -210,39 +220,46 @@ def train():
   ckpt_path = f'./song_recognition/ckpt_triplet.pth'
   
   # 训练参数
-  is_load = True
+  is_load = False
   num_epochs = 60
-  learning_rate = 1e-2
-  lr_decay = 1e-4
-  accumulation_steps = 4  # 梯度累积
-  min_loss = 1e6
+  num_batches = 100
   batch_classes = 32
+  learning_rate = 1e-2
+  triplet_margin = 0.2
+  accumulation_steps = 4  # 梯度累积
+  scale_factor = 64.0
+  feature_dim = 128
   num_augmented = 4
   k_hard = 3
+  backbone_type = 4
+  min_loss = 1e6
+  
+  if is_load: ckpt = torch.load(ckpt_path)
   
   dataset = SongTitleDataset(title_imgs_path)
   batch_maker = BatchMaker(dataset, t=batch_classes, a=num_augmented, k=k_hard)
   
-  # 模型、损失函数、优化器、调度器
-  model = TitleNet(num_classes=len(dataset)).to(device)
-  criterion = TripletLoss(margin=0.2)
+  # 创建模型
+  if not is_load:
+    model = TitleNet(feature_dim, backbone_type).to(device)
+  else:
+    model = TitleNet(ckpt['feature_dim'], ckpt['backbone_type'])
+    model.load_state_dict(ckpt['model_state_dict'])
+    min_loss = ckpt_path['loss']
+  
+  # 创建损失函数
+  criterion = TripletLoss(margin=triplet_margin, scale_factor=scale_factor)
+  if is_load: criterion.load_state_dict(ckpt['criterion_state_dict'])
+    
+  #优化器和调度器
   optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
   scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
-
-  if is_load:
-    ckpt = torch.load(ckpt_path)
-    model.load_state_dict(ckpt['model_state_dict'])
-    criterion.load_state_dict(ckpt['criterion_state_dict'])
-    min_loss = ckpt['loss']
      
   # 训练循环
   print("开始训练...")
   for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
-    
-    # 每个epoch处理足够的批次
-    num_batches = max(100, len(dataset) // (batch_maker.t * batch_maker.a))
     
     print_batch = num_batches//4
     
@@ -259,17 +276,6 @@ def train():
       triplets = batch_maker.create_triplets(features.cpu(), batch_labels)
       
       if not triplets:continue
-          
-      # 计算三元组损失
-      # total_loss = 0
-      # for anchor_idx, positive_idx, negative_idx in triplets:
-      #   anchor = features[anchor_idx]
-      #   positive = features[positive_idx] 
-      #   negative = features[negative_idx]
-        
-      #   loss = criterion(anchor.unsqueeze(0), positive.unsqueeze(0), negative.unsqueeze(0))
-      #   total_loss += loss
-     
       
       anchor, positive, negative = [], [], []
       for anchor_idx, positive_idx, negative_idx in triplets:
@@ -306,6 +312,8 @@ def train():
     if avg_loss < min_loss and (epoch + 1) % 1 == 0:
       min_loss = avg_loss
       torch.save({
+        'backbone_type':model.backbone_type,
+        'feature_dim': model.feature_dim,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'criterion_state_dict': criterion.state_dict(),

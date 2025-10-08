@@ -6,13 +6,13 @@ from pathlib import Path
 import sys
 import os
 
-from song_recognition.TitleNet import TitleNet
+from song_recognition.TitleNet import load_TitleNet
 from song_recognition.train_arcface import ArcFaceLoss  # 虽然推理时不需要，但加载模型需要
 from song_recognition.train_triplet import TripletLoss
 from utils.log import LogI, LogE, LogD, LogE
 
 class SongRecognition:
-  def __init__(self, model_path, img_dir:str, feature_json_path:str, is_load_library:bool=True):
+  def __init__(self, ckpt_path, img_dir:str, feature_json_path:str, is_load_library:bool=True):
     """
     歌曲识别器
     Args:
@@ -25,24 +25,12 @@ class SongRecognition:
     self.feature_json_path = Path(feature_json_path)
     
     # 加载模型
-    self.model = self._load_model(model_path)
+    self.model = load_TitleNet(ckpt_path)
     self.model.eval()
+    LogI(f"TitleNet loaded: {ckpt_path}")
     
     # 加载或创建特征检索库
     self.feature_library = self._load_or_create_feature_library(is_load_library)
-  
-  def _load_model(self, model_path):
-    """加载训练好的模型"""
-    # 初始化模型
-    model = TitleNet()
-    
-    # 加载检查点
-    checkpoint = torch.load(model_path, map_location=self.device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(self.device)
-    
-    LogI(f"TitleNet loaded: {model_path}")
-    return model
   
   def _load_or_create_feature_library(self, is_load:bool = True):
     """加载或创建特征检索库"""
@@ -237,7 +225,6 @@ if __name__ == '__main__':
     img_dir='./song_recognition/title_imgs',
     feature_json_path='./song_recognition/feature_vectors.json'
   )
-  
   
   # 示例1: 添加新歌曲
   # new_id = recognizer.add_song('./new_song.png')
