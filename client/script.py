@@ -15,8 +15,8 @@ class Script:
     else: return self.state2action[state]()
   def __init__(self, player:Player, user_config:UserConfig):
     self.player = player
-    self.uc = self.user_config
     self.user_config = user_config
+    self.uc = self.user_config
     self.state2action = {
       'award':         lambda : self.click(1080, 620),
       'award_again':   lambda : self.click( 800, 620),

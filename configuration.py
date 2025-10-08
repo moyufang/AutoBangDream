@@ -196,23 +196,21 @@ class UserConfig:
       performance:Performance = None,
       custom_performance:CustomPerformance = None,
       event_config:dict = None, # 特殊活动特殊考虑
-      custom_performance_title:str = 'new_bee'
+      custom_performance_title:str = 'newbee'
     ):
     self.mode = mode if mode is not None else Mode.Free
     self.event = event if event is not None else Event.Mission
     self.choose = choose if choose is not None else Choose.Loop
     self.level = level if level is not None else Level.Expert
     self.performance = performance if performance is not None else Performance.AllPerfect
-    self.custom_performance = custom_performance if custom_performance is not None else CustomPerformance
+    self.custom_performance = custom_performance if custom_performance is not None else CustomPerformance()
     self.event_config = event_config if event_config is not None else {}
     self.note_skewer = NoteSkewer(
       self.custom_performance.weights_map[custom_performance_title],
       self.performance
     )
-  def set_custom_performance_title(self, custom_performance_title:str = 'new_bee'):
+  def set_custom_performance_title(self, custom_performance_title:str = 'newbee'):
     self.note_skewer.set_weight(self.custom_performance.weights_map[custom_performance_title])
-
-    
 
 #============ POS ============#
 
@@ -293,6 +291,7 @@ TAG_COLOR       = [0, 255, 255]
 TAG_RADIUS      = 3
 
 #============ calibration ============#
+
 CORECTION_TIME = 1900000
 DILATION_TIME  = 1002000 # DILATION_TIME/1000000
 
@@ -307,6 +306,7 @@ COLOR_1_LOW, COLOR_1_HIGH = np.uint8([[155,   6, 240], [170,  12, 255]]) #
 COLOR_2_LOW, COLOR_2_HIGH = np.uint8([[  0,   0, 150], [  5,   5, 170]]) #
 COLOR_1_POS = [640, 670]
 COLOR_2_POS = [496, 640]
+
 #============ song recognition ============#
 
 STD_LEVEL_FIX_TITLE_REGION   = [220, 540, 670, 576]
@@ -317,4 +317,6 @@ STD_LEVEL_UNFIX_LEVEL_REGION = [138, 576, 174, 606]
 MASK_THRESHOLD = 170
 
 #============ main ============#
+
 CYCLE_GAP        = 0.5
+

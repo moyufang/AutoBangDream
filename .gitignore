@@ -11,6 +11,8 @@ UI_recognition/BangUINet.pth
 UI_recognition/change_img_title.py
 
 song_recognition/feature_vectors.json
+commands.json
+commands.sheet
 
 temp.py
 tmp.py

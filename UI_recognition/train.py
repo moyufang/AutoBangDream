@@ -156,8 +156,8 @@ weight_acum = dataset.weight.copy()
 weight_acum = [0]+weight_acum
 for i in range(1, len(weight_acum)):
 	weight_acum[i] += weight_acum[i-1]
-LogD(f"\n\tweight:{dataset.weight}")
-LogD(f"\n\tweight_acum:{weight_acum}")
+LogD(f"weight:{dataset.weight}")
+LogD(f"weight_acum:{weight_acum}")
 
 train(nnw, dataset, loader, epoches, up_labels)
 

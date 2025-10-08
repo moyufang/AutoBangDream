@@ -9,7 +9,7 @@ class UIRecognition:
       self.label2str = json.load(file)
 
     self.model_path = './UI_recognition/BangUiNet.pth'
-    self.nnw = th.load(self.model_path)
+    self.nnw = th.load(self.model_path, weights_only=False)
     self.nnw.eval()
   
   def get_state(self, img):
