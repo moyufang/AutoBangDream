@@ -1,15 +1,5 @@
 # [AutoBangDream(developing)](https://github.com/MoYuFang/AutoBangDream)
 
-<style>
-  img:hover {
-    transform: scale(1.05);
-    box-shadow: 
-      0 0 15px #ffe600,
-      0 0 40px #ffe600,
-      0 0 100px #ffe600,
-      0 6px 20px rgba(0,0,0,0.25);
-  }
-</style>
 <div align="center">
   <a href="https://github.com/MoYuFang/AutoBangDream">
     <img src="kokoro.png" width="200" height="200" style="
