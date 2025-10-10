@@ -5,7 +5,12 @@ import numpy as np
 from numpy import random as rd
 
 #mumu模拟器设置的分辨率
-SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720 
+SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720
+
+# 项目文件地址
+SHEETS_HEADER_PATH = './sheet/sheets_header.json'
+UI_RECOGNITION_MODEL_PATH = './UI_recognition/BangUINet.pth'
+SONG_RECOGNITION_MODEL_PATH = './song_recognition/ckpt_triplet.pth'
 
 # 演出模式
 class Mode(Enum):
@@ -214,10 +219,10 @@ class UserConfig:
 
 #============ POS ============#
 
-TRACK_LT      = ( 474,  180)
-TRACK_RT      = ( 804,  180)
-TRACK_LB      = ( 120,  580)
-TRACK_RB      = (1160,  580)
+TRACK_LT      = ( 480,  180)
+TRACK_RT      = ( 800,  180)
+TRACK_LB      = ( 120,  590)
+TRACK_RB      = (1160,  590)
 
 TRACK_T_X1    = TRACK_LT[0]
 TRACK_T_X2    = TRACK_RT[0]
@@ -268,7 +273,7 @@ SFLICK_DIS     = 100
 
 #============ note color & health bar color ============#
 
-HEALTH_POS = [1080, 32]
+HEALTH_POS = [1080, 42]
 
 BLACK      , WHITE       = np.uint8([[  0,   0,   0], [255, 255, 255]])
 HEALTH_LOW , HEALTH_HIGH = np.uint8([[ 53, 150, 150], [ 65, 160, 255]]) #
@@ -289,11 +294,6 @@ EDGE_RATE_T     = 0.7  # 应小于 MAX_RATE_T 至少一帧程度（经验）的 
 
 TAG_COLOR       = [0, 255, 255]
 TAG_RADIUS      = 3
-
-#============ calibration ============#
-
-CORECTION_TIME = 1900000
-DILATION_TIME  = 1002000 # DILATION_TIME/1000000
 
 #============ script ============#
 
@@ -318,5 +318,5 @@ MASK_THRESHOLD = 170
 
 #============ main ============#
 
-CYCLE_GAP        = 0.5
+CYCLE_GAP        = 1.5
 

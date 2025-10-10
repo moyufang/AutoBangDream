@@ -1,6 +1,6 @@
 import time
 import os
-import pyautogui, win32gui, win32ui, win32con, win32api
+import win32gui, win32ui, win32con, win32api, pyautogui
 import numpy as np
 import cv2 as cv
 
@@ -140,7 +140,7 @@ class Grabber:
 class MumuGrabber:
   def resolution2padding_navigation(resolution:tuple=(1280, 720)):
     r2p_n = {
-      (16, 9): (5, 58)
+      (16, 9): (4, 36)#(5, 58)
     }
     rate = resolution[0]/resolution[1]
     min_rate_diff = 1000000000
@@ -245,12 +245,11 @@ class MumuGrabber:
     ]
     if hasattr(self, 'grabber'):
       self.grabber.set_region(self.__grabber_region)
-      
     
 if __name__ == "__main__":
   SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720#divider
   
-  base = [120, 150]
+  base = [0, 0]
   grabber = MumuGrabber(
     'Mumu安卓设备',
     SCALE,
@@ -267,18 +266,18 @@ grab_region:{grabber.grabber.region}/{(grabber.grabber.window_width, grabber.gra
 region:{grabber.region}/{grabber.STD_WINDOW_WIDTH, grabber.STD_WINDOW_HEIGHT}\
 \n")
 
-  grabber.set_region([STD_WINDOW_WIDTH//4, STD_WINDOW_HEIGHT//4, STD_WINDOW_WIDTH*3//4, STD_WINDOW_HEIGHT*3//4])
-  time.sleep(0.5)
-  grabber.grab("2")
-  print(f"\
-grab_region:{grabber.grabber.region}/{(grabber.grabber.window_width, grabber.grabber.window_height)} \
-region:{grabber.region}/{grabber.STD_WINDOW_WIDTH, grabber.STD_WINDOW_HEIGHT}\
-\n")
+#   grabber.set_region([STD_WINDOW_WIDTH//4, STD_WINDOW_HEIGHT//4, STD_WINDOW_WIDTH*3//4, STD_WINDOW_HEIGHT*3//4])
+#   time.sleep(0.5)
+#   grabber.grab("2")
+#   print(f"\
+# grab_region:{grabber.grabber.region}/{(grabber.grabber.window_width, grabber.grabber.window_height)} \
+# region:{grabber.region}/{grabber.STD_WINDOW_WIDTH, grabber.STD_WINDOW_HEIGHT}\
+# \n")
 
-  grabber.set_window(2)
-  time.sleep(0.5)
-  grabber.grab("3")
-  print(f"\
-grab_region:{grabber.grabber.region}/{(grabber.grabber.window_width, grabber.grabber.window_height)} \
-region:{grabber.region}/{grabber.STD_WINDOW_WIDTH, grabber.STD_WINDOW_HEIGHT}\
-\n")
+#   grabber.set_window(2)
+#   time.sleep(0.5)
+#   grabber.grab("3")
+#   print(f"\
+# grab_region:{grabber.grabber.region}/{(grabber.grabber.window_width, grabber.grabber.window_height)} \
+# region:{grabber.region}/{grabber.STD_WINDOW_WIDTH, grabber.STD_WINDOW_HEIGHT}\
+# \n")

@@ -82,7 +82,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
       release_t = max(record_t+MIDDLE_MIN_GAP, t+(seq[-1]['beat']-b)*60/bpm + note_skewer.get_skew())
       commands.append([record_t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       if 'flick' in seq[-1] and seq[-1]['flick']:
-        for i in range(1, len(LFLICK_COUNT)):
+        for i in range(1, LFLICK_COUNT):
           commands.append([
             release_t+i*LFLICK_PERIOD/LFLICK_COUNT,
             f"m {touch} {TRACK_B_X[l]-int(i*LFLICK_DIS/(LFLICK_COUNT-1))} {TRACK_B_Y}"

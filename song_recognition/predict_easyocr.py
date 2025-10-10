@@ -7,6 +7,7 @@ from configuration import *
 from sheet.fetch_sheets import shave_str, special_char
 from client.player import Player
 from configuration import *
+import torch as th
 
 sheets_header_path = './sheet/sheets_header.json'
 
@@ -26,9 +27,7 @@ def get_edit_dis(s1, s2, eo=-1):
   return f[l2]
 
 class SongRecognition:
-  def __init__(self, player:Player, user_config:UserConfig, sheets_header_path:str):
-    self.player = player
-    self.user_config = user_config
+  def __init__(self, sheets_header_path:str):
     with open(sheets_header_path, "r", encoding='utf-8') as file:
       self.sheets_header = json.load(file)
       
@@ -42,8 +41,8 @@ class SongRecognition:
         else:
           if o[0] not in self.title_map[c]: self.title_map[c][o[0]] = 1
           else: self.title_map[c][o[0]] += 1
-      
-    self.reader = easyocr.Reader(['ja', 'en'], gpu=False)
+    
+    self.reader = easyocr.Reader(['ja', 'en'], gpu=th.cuda.is_available())
   def patch(self, s):
     char_cnt = {}
     id_cnt = {}
@@ -79,45 +78,6 @@ class SongRecognition:
       score = id_cnt[tar_id]+2.0/(1+abs(l-len(self.sheets_header[str(tar_id)][1])))
     #print("tar_id:%d title:%s score:%lf"%(tar_id, self.sheets_header[tar_id][1], score))
     return tar_id
-  def get_song(self, img):
-    uc = self.user_config
-    if uc.mode == Mode.Collaborate or (uc.mode == Mode.Event and Event.Tour):
-      x1,y1,x2,y2 = STD_LEVEL_UNFIX_TITLE_REGION
-      t_img = img[x1:x2, y1:y2, :3]
-      x1,y1,x2,y2 = STD_LEVEL_UNFIX_LEVEL_REGION
-      l_img = img[x1:x2, y1:y2, :3]
-    else:
-      x1,y1,x2,y2 = STD_LEVEL_FIX_TITLE_REGION
-      t_img = img[x1:x2, y1:y2, :3]
-      x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION
-      l_img = img[x1:x2, y1:y2, :3]
-    
-    t_img = cv.cvtColor(t_img, cv.COLOR_BGR2GRAY)
-    l_img = cv.cvtColor(l_img, cv.COLOR_BGR2GRAY)
-    
-    MASK_THRESHOLD = 160
-
-    t_mask = (t_img < MASK_THRESHOLD).astype(np.uint8)*255
-    l_mask = (l_img < MASK_THRESHOLD).astype(np.uint8)*255
-    t_recog = self.reader.readtext(t_mask, detail = 0, paragraph=True, text_threshold=0.9)
-    l_recog = self.reader.readtext(l_mask, detail = 0, paragraph=True, text_threshold=0.9)
-    pattern = shave_str("".join(t_recog))
-    pre_idx = self.patch(pattern)
-    level = "".join(l_recog)
-    try:
-      level = int(level)
-    except Exception as e:
-      print(f"l_recog:{l_recog}")
-      raise e
-
-    if len(pattern) == 1 or pre_idx in [-1, 389, 410, 462, 467]:
-      print(f"Unsafe pre_idx : {pre_idx}")
-      exit(1)
-      return
-
-    print("\n[",pattern, pre_idx, self.sheets_header[str(pre_idx)][1],"]\n")
-    return pre_idx, level, self.sheets_header[str(pre_idx)]
-  
   def parse_t_img(self, t_img):
     
     t_mask = (t_img < MASK_THRESHOLD).astype(np.uint8)*255
@@ -128,9 +88,11 @@ class SongRecognition:
     print("[",pattern, pre_idx, self.sheets_header[str(pre_idx)][1], "]")
     if len(pattern) == 1 or pre_idx in [-1, 389, 410, 462, 467]:
       print(f"Unsafe pre_idx : {pre_idx} raw_str:{t_recog}")
-    return pre_idx, self.sheets_header[str(pre_idx)], pattern
+      is_safe = False
+    else: is_safe = True
+    return pre_idx, self.sheets_header[str(pre_idx)], pattern, is_safe
 
 if __name__ == '__main__':
-  pass
+  recognition = SongRecognition(SHEETS_HEADER_PATH)
   
   

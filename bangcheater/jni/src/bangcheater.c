@@ -232,7 +232,7 @@ static int parse_input(const char* buffer){
   cursor = (char*) buffer;
   cursor += 1;
 
-  LogR("Parse input:%s\n", buffer);
+  // LogR("Parse input:%s\n", buffer);
 
   struct timespec now;
   switch (buffer[0]) {

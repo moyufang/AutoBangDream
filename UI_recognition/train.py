@@ -19,14 +19,20 @@ import torch.optim as opt
 from UI_recognition.BangUINet import *
 from utils.log import LogE, LogD, LogI, LogS
 
+device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
+print(f"Using: {device}")
+
 def get_batch_size(s:int, n:int):
-  if n%s == 0: return s
-  for i in range(1, n+1):
-    for j in [1, -1]:
-      t = s+j*i
-      if t < 1 or t > n: continue
-      if n%t == 0: return t
-  return n
+  def gbs(s, n):
+    if n%s == 0: return s
+    for i in range(1, n+1):
+      for j in [1, -1]:
+        t = s+j*i
+        if t < 1 or t > n: continue
+        if n%t == 0: return t
+  b = gbs(s, n)
+  if b == 1 or b <= n*0.05: b = n
+  return b
 
 class ImgsDataset(Dataset):
 	def __init__(self, model_name):
@@ -36,7 +42,7 @@ class ImgsDataset(Dataset):
 		self.str2label, self.label2str, self.weight, self.data_array, self.datasets = \
 			{}, [], [], [], []
 		for file in pathlib.Path(self.dir_path).rglob('*.png'):
-			print(file._str)
+			# print(file._str)
 			label_str,count,___ = re.split(r'[-.]', file.name)
 			if label_str not in self.str2label:
 				self.str2label[label_str] = self.classes_num
@@ -78,63 +84,65 @@ class ImgsDataset(Dataset):
 		return self.datasets[idx], self.data_array[idx][0]
 
 def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
-	learn_rate = 0.05
-	momentum = 0.8
- 
- # 用 wt 平衡训练样本中，各类图片数量不均衡的问题
-	wt = [o for o in dataset.weight]
-	for i in range(len(wt)):
-		if dataset.label2str[i] in up_labels: wt[i] = wt[i]*3
-	tot = sum(wt)
-	for i in range(len(wt)): wt[i] = tot/wt[i]
+  learn_rate = 0.05
+  momentum = 0.8
 
-	Loss = nn.CrossEntropyLoss(th.Tensor(wt))
-	SGD = opt.SGD(nnw.parameters(), lr = learn_rate, momentum = momentum)#, weight_decay = weight_decay)
+  # 用 wt 平衡训练样本中，各类图片数量不均衡的问题
+  wt = [o for o in dataset.weight]
+  for i in range(len(wt)):
+    if dataset.label2str[i] in up_labels: wt[i] = wt[i]*3
+  tot = sum(wt)
+  for i in range(len(wt)): wt[i] = tot/wt[i]
 
-	LogI("Start Training")
-	for epoch in range(epoches):
-		train_loss, train_acc, test_loss, test_acc = 0, 0, 0, 0
-		nnw.train()
-		#if epoch >= 5 and train_losses[epoch-1]/(train_losses[epoch-2]) >= 0.99:
-		#	SGD.param_groups[0]['lr'] *= 0.1
-		if (epoch+1) % 5 == 0:
-			th.save(nnw, model_path)
-			#SGD.param_groups[0]['lr'] *= 0.1
-		start_time = time.time()
-		for img, label in loader:
-			out = nnw(img)
-			loss = Loss(out, label)
-			#print(img.size(), label.size(), out.size())
-			#exit()
+  Loss = nn.CrossEntropyLoss(th.Tensor(wt)).to(device)
+  SGD = opt.SGD(nnw.parameters(), lr = learn_rate, momentum = momentum)#, weight_decay = weight_decay)
 
-			SGD.zero_grad()
-			loss.backward()
-			SGD.step()
+  LogI("Start Training")
+  for epoch in range(epoches):
+    train_loss, train_acc, test_loss, test_acc = 0, 0, 0, 0
+    nnw.train()
+    #if epoch >= 5 and train_losses[epoch-1]/(train_losses[epoch-2]) >= 0.99:
+    #	SGD.param_groups[0]['lr'] *= 0.1
+    if (epoch+1) % 5 == 0:
+      th.save(nnw, model_path)
+      #SGD.param_groups[0]['lr'] *= 0.1
+    start_time = time.time()
+    for img, label in loader:
+      img = img.to(device)
+      label = label.to(device)
+      out = nnw(img)
+      loss = Loss(out, label)
+      #print(img.size(), label.size(), out.size())
+      #exit()
 
-			train_loss += loss.item()
-			# 计算分类的准确率
-			_, pred = out.max(1)
-			mmin, mmax = _.min(), _.max()
-			# LogD(f"mmin: {mmin} mmax: {mmax}")
-			num_correct = (pred == label).sum().item()
-			train_acc += num_correct / img.shape[0]
-		end_time = time.time()
-		LogI("OneBatchTrainTime:{}".format(end_time-start_time))
-		train_loss /= len(loader)
-		train_acc /= len(loader)
+      SGD.zero_grad()
+      loss.backward()
+      SGD.step()
 
-		LogI("epoch%d train_loss:%lf train_acc:%lf"%(epoch, train_loss, train_acc))
-	
-	th.save(nnw, model_path)
+      train_loss += loss.item()
+      # 计算分类的准确率
+      _, pred = out.max(1)
+      mmin, mmax = _.min(), _.max()
+      # LogD(f"mmin: {mmin} mmax: {mmax}")
+      num_correct = (pred == label).sum().item()
+      train_acc += num_correct / img.shape[0]
+    end_time = time.time()
+    LogI("OneBatchTrainTime:{}".format(end_time-start_time))
+    train_loss /= len(loader)
+    train_acc /= len(loader)
+
+    LogI("epoch%d train_loss:%lf train_acc:%lf"%(epoch, train_loss, train_acc))
+
+  th.save(nnw, model_path)
 
 #============ train configuration ============#
 
 Net = BangUiNet
 model_name = "BangUINet"
-batch_size = 64 
-epoches = 40
-up_labels = ['award', 'award_again', 'ready', 'ready_done'] 
-is_load_new_model = False
+batch_size = 128
+epoches = 20
+up_labels = ['award', 'award_again', 'award_level', 'ready', 'ready_done'] 
+is_load_model = True
 
 #============ train ============#
  
@@ -146,10 +154,12 @@ loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 model_path = './UI_recognition/'+model_name+".pth"
 nnw = Net(dataset.classes_num)
 
-if is_load_new_model:
+if not is_load_model:
   nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
 else:
   nnw = th.load(model_path, weights_only=False)
+  
+nnw = nnw.to(device)
 
 n = dataset.datasets.size(0)
 weight_acum = dataset.weight.copy()
@@ -163,7 +173,7 @@ train(nnw, dataset, loader, epoches, up_labels)
 
 def get_label(img):
 	global nnw
-	out = nnw(img.unsqueeze(0))
+	out = nnw(img.unsqueeze(0).to(device))
 	_, pred = out.max(1)
 	return pred.item(), dataset.label2str[pred.item()]
 

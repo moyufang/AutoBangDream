@@ -31,21 +31,25 @@ class SongRecognition:
     # 加载或创建特征检索库
     self.feature_library = self._load_or_create_feature_library(is_load_library)
     
+    with open(SHEETS_HEADER_PATH, "r", encoding='utf-8') as file:
+      self.sheets_header = json.load(file)
+    
     self.uc = user_config
     
   def get_id_by_full_img(self, full_img):
     # 选歌界面有选择难度的情况，即 FIX 的情况
     is_fix = self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)
     x1,y1,x2,y2 = STD_LEVEL_FIX_TITLE_REGION if is_fix else STD_LEVEL_UNFIX_TITLE_REGION
-    g_img = cv2.cvtColor(full_img[x1:x2, y1:y2], cv2.COLOR_BGR2GRAY)
-    
-    song_id = self.get_id(g_img)
+    t_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+    # LogD(f"f_img_shape:{full_img.shape} region:{STD_LEVEL_FIX_TITLE_REGION}")
+    # cv2.imwrite("./song_recognition/title_imgs_temp/t_img.png", t_img)
+    song_id, similarity = self.get_id(t_img)
     
     # BangDream 全游目前仅有两对同名不同谱的歌曲，但部分难度的 Level 不同，未来将在此根据 level 特殊处理
     # 无法区分的情况仅在 Hard 及以下难度出现，一般不在使用脚本时出现，故不进一步区分
     x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
-    g_img = cv2.cvtColor(full_img[x1:x2, y1:y2], cv2.COLOR_BGR2GRAY)
-    level = -1 # self.get_level(g_img)
+    l_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+    level = -1 # self.get_level(l_img)
     if song_id == 410: # 410 难度 26 21 14 8
       if \
         (self.uc.level == Level.Expert and level == 27) or \
@@ -59,7 +63,7 @@ class SongRecognition:
         (self.uc.level == Level.Hard   and level == 13) or \
         (self.uc.level == Level.Hard   and level ==  8): song_id = 389
     
-    return song_id
+    return song_id, self.sheets_header[str(song_id)][1], similarity
   
   def _load_or_create_feature_library(self, is_load:bool = True):
     """加载或创建特征检索库"""
@@ -255,7 +259,7 @@ if __name__ == '__main__':
   # print(f"识别结果: 歌曲ID {song_id}, 相似度 {similarity:.4f}")
   
   # 示例3: 获取最相似的几首歌曲
-  query_img = cv2.imread('./song_recognition/title_imgs/t-462.png', cv2.IMREAD_GRAYSCALE)
+  query_img = cv2.imread('./song_recognition/title_imgs/t-740.png', cv2.IMREAD_GRAYSCALE)
   similar_songs = recognizer.get_similar_songs(query_img, top_k=3)
   for song_id, sim in similar_songs:
       print(f"歌曲ID: {song_id}, 相似度: {sim:.4f}")

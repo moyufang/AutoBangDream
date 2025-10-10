@@ -6,7 +6,6 @@ import cv2 as cv
 class HealthExtractor:
   def __init__(self, grabber:MumuGrabber, is_to_hsv:bool = True):
     self.grabber    = grabber
-    self.scale      = grabber.scale
     self.is_to_hsv  = is_to_hsv
     self.is_playing = False
   def grab(self):
@@ -16,7 +15,7 @@ class HealthExtractor:
   def get_is_playing(self, hsv_img:cv.Mat|None=None):
     if hsv_img == None: hsv_img = self.grab()
     # 提取生命条位置的颜色，判断演出是否开始
-    health_pos   = [(HEALTH_POS[i]-self.grabber.std_region[i])//self.scale for i in range(2)]
+    health_pos   = [(HEALTH_POS[i]-self.grabber.std_region[i])//self.grabber.scale for i in range(2)]
     health_color = hsv_img[health_pos[1], health_pos[0]]
     self.is_playing   = ((HEALTH_LOW <= health_color) & (health_color <= HEALTH_HIGH)).all()
     if not self.is_playing: # 演出未开始，无效返回
@@ -120,7 +119,7 @@ class NoteExtractor:
       mask[7] = cv.bitwise_not(mask[0])
       derive_mask = np.zeros_like(mask[0])
       if (derive_para & NoteExtractor.DerivePara.ALL) > 0:
-          derive_mask |= mask[0]
+        derive_mask |= mask[0]
       else:
         for i in range(1, 7):
           if ((derive_para & (1<<i)) > 0): derive_mask |= mask[i]

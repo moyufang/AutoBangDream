@@ -11,8 +11,8 @@ class Player:
   def __init__(self, communication_mode:str, init_scale=2):
     SCALE = init_scale
 
-    self.full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None) 
     self.track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
+    self.full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None) 
     self.extractor     = NoteExtractor(self.track_grabber, True)
     self.health_extrator = HealthExtractor(self.full_grabber)
     
@@ -33,7 +33,12 @@ class Player:
     else:
       LogE("Unknown communication mode.")
       exit(1)
-  
+  def set_scale(self, scale):
+    if scale == self.full_grabber.scale: return
+    self.full_grabber.set_window(scale)
+    self.track_grabber.set_window(scale)
+  def get_scale(self):
+    return self.full_grabber.scale
   def set_caliboration_para(self, dilation_time, correction_time):
     self.dilation_time = dilation_time
     self.correction_time = correction_time
@@ -62,6 +67,13 @@ class Player:
       img = self.extractor.grab()
       tim = self.extractor.get_grab_time() - start_time
       derive_img, t_s, is_edge = self.extractor.extract(img, NoteExtractor.DerivePara.NONE)
+      
+      # if t_s[0] < 0.0:
+      #   print(t_s)
+      #   print("save false into opps.")
+      #   cv.imwrite('./play/opps/img.png', cv.cvtColor(img, cv.COLOR_HSV2BGR))
+      if t_s[0] < 0.0:
+        continue
       
       predict_time += tim+predict(t_s[0])
       predict_count += 1

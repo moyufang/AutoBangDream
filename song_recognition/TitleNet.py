@@ -233,7 +233,7 @@ class TitleNet(nn.Module):
 
 def load_TitleNet(ckpt_path:str):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  ckpt = torch.load(ckpt_path)
+  ckpt = torch.load(ckpt_path, map_location=device)
   model = TitleNet(ckpt['feature_dim'], ckpt['backbone_type'],pretrained=False).to(device)
   model.load_state_dict(ckpt['model_state_dict'])
   model.eval()

@@ -131,7 +131,7 @@ int launch_controller(struct LowLatencyController *clr){
               // 注意：如果是非阻塞模式，那么可以继续循环，但可能需要进行适当的休眠避免忙等待
               // 如果是阻塞模式，则不会出现EAGAIN。
               if (!is_waiting){
-                LogD("TCP wait.\n",bytes_read, buffer);
+                // LogD("TCP wait.\n",bytes_read, buffer);
                 is_waiting = 1;
               }
               continue;

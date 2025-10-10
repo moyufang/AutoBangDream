@@ -44,12 +44,12 @@ class BangUiNet(nn.Module):
 		last_channels = _make_divisible(256 * alpha, round_nearest)
 		inverted_residual_setting = [
 			#t扩展因子,c输出特征矩阵深度channel,n是bottleneck的重复次数,s是步距
-			[1, 16, 1, 1],  #100*160
-			[6, 24, 1, 2],  #50*80
-			[6, 32, 2, 2],  #25*40
-			[6, 64, 2, 2],  #13*20
-			[6, 96, 2, 2],  #7*10
-			[6, 160, 1, 1], #7*10
+			[1, 16, 1, 1],  #90*160
+			[6, 24, 2, 2],  #45*80
+			[6, 32, 3, 2],  #23*40
+			[6, 64, 3, 2],  #12*20
+			[6, 96, 2, 2],  #6*10
+			[6, 160, 1, 1], #6*10
 		]
 		features = []
 		features.append(ConvBNReLU6(3, in_channels, stride=1))

@@ -137,6 +137,9 @@ def compare(first_note_datas, merge_datas, coefficients_v1, coefficients_v2):
   # 设置图形属性
   plt.xlabel('x', fontsize=12)
   plt.ylabel('y', fontsize=12)
+  plt.title('Track', fontsize=14)
+  plt.legend(fontsize=10)
+  plt.grid(True, alpha=0.3)
   plt.xlim(0, 1.0)
   plt.tight_layout()
   plt.savefig(compare_result_path, dpi=300, bbox_inches='tight')

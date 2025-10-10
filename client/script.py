@@ -18,20 +18,20 @@ class Script:
     self.user_config = user_config
     self.uc = self.user_config
     self.state2action = {
-      'award':         lambda : self.click(1080, 620),
-      'award_again':   lambda : self.click( 800, 620),
+      'award':         lambda : self.click(1080, 640),
+      'award_again':   lambda : self.click( 800, 640),
       'award_back':    lambda : self.click( 760, 440),
       'award_dialog':  lambda : (
-                                self.click( 640, 620),
+                                self.click( 640, 640),
                                 self.click( 640, 590),
                                 self.click( 640, 580),
                                 self.click( 640, 560),
                                 self.click( 640, 520),
                                 self.click( 640, 510),
                                 ),
-      'award_level':   lambda : self.click(1080, 620),
+      'award_level':   lambda : self.click(1080, 640),
       'award_loading': lambda: True,
-      'award_score':   lambda : self.click(1080, 620),
+      'award_score':   lambda : self.click(1080, 640),
       'choose':        self._choose,
       'choose_dialog': lambda : (
                                 self.click( 876, 208),
@@ -42,11 +42,11 @@ class Script:
                                 time.sleep(CLICK_GAP),
                                 self.click( 876, 430),
                                 time.sleep(CLICK_GAP),
-                                self.click( 780, 620)
+                                self.click( 780, 640)
       ),
       'failed':        lambda : self.click( 640, 440),
       'failed_again':  lambda : self.click( 680, 440),
-      'join':          lambda : self.click(1080, 620),
+      'join':          lambda : self.click(1080, 640),
       'join_loading':  lambda : True,
       'join_wait':     lambda : True,
       'join_exit':     lambda : self.click(  32,  32),
@@ -62,15 +62,15 @@ class Script:
                                 ),
       'opps_reconnect':lambda : self.click( 780, 500),
       'playing':       lambda : True,
-      'play_mode':     self._play_mode,
+      'playmode':     self._play_mode,
       'ready':         self._ready,
       'ready_adjust':  lambda : self.click( 780, 500),
       'ready_done':    lambda : True,
-      'stage':         lambda : self.click(1080, 620),
-      'stage_choose':  lambda : self.click(1080, 620),
+      'stage':         lambda : self.click(1080, 640),
+      'stage_choose':  lambda : self.click(1080, 640),
       'tour':          lambda : self.click( 440, 450) if self.uc.event_config['lobby'] == 'event' else \
                                 self.click( 840, 450),
-      'tour_choose':   lambda : self.click(1080, 620),
+      'tour_choose':   lambda : self.click(1080, 640),
     }
     
   def _ready(self):

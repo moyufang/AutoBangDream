@@ -6,8 +6,6 @@ import cv2 as cv
 from pathlib import Path
 import time
 
-
-
 class Mode(Enum):
   Capture          = auto()
   Record           = auto()
@@ -22,31 +20,28 @@ is_save        = False                # 是否保存帧
 save_scale     = 1                    # 保存时的缩放
 frame_id_start = 0                    # 帧ID起始值
 frame_id       = frame_id_start       # 帧ID
-frames_path    = './song_recognition/full/'     # 帧保存路径
-frame_name     = 'f%03d.png'
+frames_path    = './play/opps/'     # 帧保存路径
+frame_name     = 'f%05d.png'
 frame_list     = []                   # 在 WalkThrough 和 WalkThroughSheet 模式下，指定待查看的图片程 frame_id
                                       # 为空列表时，则抓取 frames_path 下所有 png 图片
-
 derive_para    = 0
 for tag in [
   NoteExtractor.DerivePara.ALL,
   NoteExtractor.DerivePara.TAG,
   NoteExtractor.DerivePara.NOBG,
 ]: derive_para |= tag                 # 指定 derive_img 的样式
-
 is_extractor_use_full = False         # 选择 extractor 是截取全屏，还是仅截取与音轨相关的区域
-
 trace_note_path       = \
   './play/trace_note.json'            # ExtractNote 模式下，结果的保存地址
 trace_first_note_path = \
   './play/trace_first_note.json'      # ExtractFirstNote 模式下，结果的保存地址
 
-mode = Mode.Capture            # 选择模式
+mode = Mode.Record                 # 选择模式
 
 # 计算得到的参数
 is_extract_first_note = mode == Mode.TraceFirstNote  # 选择 提取第一个 note，ExtractFirstNote 专用
 
-if mode != Mode.WalkThrough and mode != Mode.WalkThroughSheet:
+if mode != Mode.WalkThrough:
   full_grabber  = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], None)
   track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
   extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
