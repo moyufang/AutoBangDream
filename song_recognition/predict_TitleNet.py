@@ -259,7 +259,7 @@ if __name__ == '__main__':
   # print(f"识别结果: 歌曲ID {song_id}, 相似度 {similarity:.4f}")
   
   # 示例3: 获取最相似的几首歌曲
-  query_img = cv2.imread('./song_recognition/title_imgs/t-740.png', cv2.IMREAD_GRAYSCALE)
+  query_img = cv2.imread('./song_recognition/title_imgs/t-676.png', cv2.IMREAD_GRAYSCALE)
   similar_songs = recognizer.get_similar_songs(query_img, top_k=3)
   for song_id, sim in similar_songs:
       print(f"歌曲ID: {song_id}, 相似度: {sim:.4f}")

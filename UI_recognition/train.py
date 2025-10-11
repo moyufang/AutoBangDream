@@ -18,6 +18,8 @@ import torch.optim as opt
 
 from UI_recognition.BangUINet import *
 from utils.log import LogE, LogD, LogI, LogS
+from configuration import *
+from UI_recognition.add_img import load_UI_imgs
 
 device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
 print(f"Using: {device}")
@@ -29,59 +31,45 @@ def get_batch_size(s:int, n:int):
       for j in [1, -1]:
         t = s+j*i
         if t < 1 or t > n: continue
-        if n%t == 0: return t
+        if n%t == 0 or (t-n%t) <= n*0.05: return t
   b = gbs(s, n)
   if b == 1 or b <= n*0.05: b = n
   return b
 
 class ImgsDataset(Dataset):
-	def __init__(self, model_name):
-		self.model_name = model_name
-		self.dir_path = './UI_recognition/'+model_name+'_train_imgs/'
-		self.classes_num, self.height, self.width = 0, 0, 0
-		self.str2label, self.label2str, self.weight, self.data_array, self.datasets = \
-			{}, [], [], [], []
-		for file in pathlib.Path(self.dir_path).rglob('*.png'):
-			# print(file._str)
-			label_str,count,___ = re.split(r'[-.]', file.name)
-			if label_str not in self.str2label:
-				self.str2label[label_str] = self.classes_num
-				self.label2str.append(label_str)
-				self.weight.append(0)
-				self.classes_num += 1
-			self.weight[self.str2label[label_str]] += 1
-		for o in range(self.classes_num):
-			self.data_array.extend([(o, i) for i in range(self.weight[o])])
-		#print(self.data_array)
-		#print(len(self.data_array))
-		for label, idx in self.data_array:
-			label_str = self.label2str[label]
-			img_path = self.dir_path+f'{label_str}-%03d.png'%(idx)
-			img = io.read_image(img_path)
+  def __init__(self):
+    self.classes_num, self.height, self.width = 0, 0, 0
+    self.str2label, self.label2str, self.weight, self.datasets, self.labels = \
+      {}, [], [], [], []
+    self.classes_num, self.str2label, self.label2str, self.weight = load_UI_imgs()
+    
+    for label in range(self.classes_num):
+      for idx in range(self.weight[label]):
+        label_str = self.label2str[label]
+        img_path = UI_IMGS_PATH+f'{label_str}-%03d.png'%(idx)
+        img = io.read_image(img_path)
 
-			if self.height == 0:
-				self.height, self.width = img.size()[1:3]
-				
-			self.datasets.append(img.to(th.float32))
+        if self.height == 0:
+          self.height, self.width = img.size()[1:3]
+          
+        self.datasets.append(img.to(th.float32))
+        self.labels.append(label)
 
-			# img_cv = cv.cvtColor(cv.imread(img_path, cv.IMREAD_COLOR), cv.COLOR_BGR2RGB)
-			# img_cv = np.transpose(img_cv, (2, 0, 1))
-			# print((img.numpy()-img_cv).max())
-			# print(type(img), img.shape)
+      # img_cv = cv.cvtColor(cv.imread(img_path, cv.IMREAD_COLOR), cv.COLOR_BGR2RGB)
+      # img_cv = np.transpose(img_cv, (2, 0, 1))
+      # print((img.numpy()-img_cv).max())
+      # print(type(img), img.shape)
 
-		self.datasets = th.stack(self.datasets, dim=0)
-		self.datasets.requires_grad_(False)
-		self.datasets /= 255.0
+    self.datasets = th.stack(self.datasets, dim=0)
+    self.datasets.requires_grad_(False)
+    self.datasets /= 255.0
 
-		with open('./UI_recognition/'+model_name+r"_label2str.json", "w") as file:
-			json.dump(self.label2str, file)
-
-		LogI(f"Read image datasets from '%s' with shape: {self.datasets.size()} and classes_num: %d"%(
-      self.dir_path, self.classes_num))
-	def __len__(self):
-		return len(self.data_array)
-	def __getitem__(self, idx):
-		return self.datasets[idx], self.data_array[idx][0]
+    LogI(f"Read %d image datasets from '%s' with shape: {self.datasets.size()} and classes_num: %d"%(
+      len(self), UI_IMGS_PATH, self.classes_num))
+  def __len__(self):
+    return len(self.labels)
+  def __getitem__(self, idx):
+    return self.datasets[idx], self.labels[idx]
 
 def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
   learn_rate = 0.05
@@ -146,7 +134,7 @@ is_load_model = True
 
 #============ train ============#
  
-dataset = ImgsDataset(model_name)
+dataset = ImgsDataset()
 batch_size = get_batch_size(64, len(dataset))
 LogD(f"batch_size:{batch_size}")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)

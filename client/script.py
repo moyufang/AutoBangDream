@@ -23,10 +23,15 @@ class Script:
       'award_back':    lambda : self.click( 760, 440),
       'award_dialog':  lambda : (
                                 self.click( 640, 640),
+                                time.sleep(CLICK_GAP),
                                 self.click( 640, 590),
+                                time.sleep(CLICK_GAP),
                                 self.click( 640, 580),
+                                time.sleep(CLICK_GAP),
                                 self.click( 640, 560),
+                                time.sleep(CLICK_GAP),
                                 self.click( 640, 520),
+                                time.sleep(CLICK_GAP),
                                 self.click( 640, 510),
                                 ),
       'award_level':   lambda : self.click(1080, 640),
@@ -51,7 +56,7 @@ class Script:
       'join_wait':     lambda : True,
       'join_exit':     lambda : self.click(  32,  32),
       'loading':       lambda : True,
-      'main_page':     lambda : self.click(1200, 640),
+      'main_page':     lambda : self.click(1120, 640),
       'opps':          lambda : (
                                 self.click( 640, 420),
                                 self.click( 640, 430),
@@ -83,16 +88,9 @@ class Script:
     # ready 界面有选择难度的情况
     elif not(self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)):
       self.click(852, 540)
-      time.sleep(CLICK_GAP)
-      self.click(600+self.uc.level*84, 540)
-      time.sleep(CLICK_GAP)
-      
       time.sleep(INCASE_DELAY_GAP)
-      
-      self.click(852, 540)
-      time.sleep(CLICK_GAP)
       self.click(600+self.uc.level*84, 540)
-      time.sleep(CLICK_GAP)
+      time.sleep(INCASE_DELAY_GAP)
       
     self.click(1120, 600)
     return True
@@ -121,9 +119,9 @@ class Script:
     
     # 选歌界面有选择难度的情况
     if self.uc.mode == Mode.Free or self.uc.mode == Mode.Stage:
-      self.click(944, 520)                 # Default diff is 'Expert'
+      self.click(1060, 520)                 # Default diff is 'Expert'
       time.sleep(CLICK_GAP) 
-      self.click(712+self.uc.level*116, 520)  # Choose song diff
+      self.click(715+self.uc.level*115, 520)  # Choose song diff
       time.sleep(CLICK_GAP)
     
     self.click(1080, 620)

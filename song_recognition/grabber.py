@@ -56,12 +56,14 @@ elif mode == Mode.AddNewSong:
       cv.imwrite(title_imgs_path+title_img_name, t_img)
       print(f"Save to \"{title_imgs_path+title_img_name}\"")
       
-      # recognizer = SongRecognition(
-      #   ckpt_path=SONG_RECOGNITION_MODEL_PATH,
-      #   img_dir='./song_recognition/title_imgs',
-      #   feature_json_path='./song_recognition/feature_vectors.json',
-      #   is_load_library=False
-      # )
+      from song_recognition.predict_TitleNet import SongRecognition as SR
+      
+      recognizer = SR(
+        ckpt_path=SONG_RECOGNITION_MODEL_PATH,
+        img_dir='./song_recognition/title_imgs',
+        feature_json_path='./song_recognition/feature_vectors.json',
+        is_load_library=False
+      )
     else:
       print("Drop saving.")
     

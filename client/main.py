@@ -18,36 +18,37 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Free,
-  Event.Challenge,
-  Choose.Loop,
+  Mode.Event,
+  Event.Compete,
+  Choose.Random,
   Level.Expert,
-  Performance.AllPerfect,
+  Performance.FullCombo,
   custom_performance,
   None,
-  'newbee'
+  'skilled'
 )
 uc = user_config
-
-dilation_time   =  1000000
-correction_time = -  40000
+#380926578
+#850697649
+dilation_time       =  1000000
+correction_time     = -  49000
 
 #============ Run Configuration ============#
 
-play_one_song_id = 659
-is_play_one_song = False
-is_no_action = False
-is_restart_play = True
-is_allow_save = True
-is_checking_3d = True
-is_save_commands_json = True
-last_state = None
-song_duration = 140
+play_one_song_id    = 659
+is_play_one_song    = False
+is_no_action        = False
+is_restart_play     = True
+is_allow_save       = True
+is_checking_3d      = False
+is_save_commands    = True
+last_state          = None
+song_duration       = 140
 
-log_imgs_path = './UI_recognition/log_imgs/'
-sheets_path = './sheet/sheets/'
+log_imgs_path       = './UI_recognition/log_imgs/'
+sheets_path         = './sheet/sheets/'
 commands_sheet_path = './client/commands.sheet'
-commands_json_path = "./client/commands.json"
+commands_json_path  = './client/commands.json'
 
 #============ declaration ============#
 
@@ -78,7 +79,7 @@ if True:
     LogS('ready', f'Try to upload "{sheet_path}"')
     push_file(commands_sheet_path)
     
-    if is_save_commands_json:
+    if is_save_commands:
       with open(commands_json_path, "w", encoding="utf-8") as file: json.dump(commands, file)
       refine(commands_json_path)
       LogS('ready', f'Save commands_json to "{commands_json_path}"')
@@ -105,13 +106,13 @@ if is_play_one_song:
 #============ Cycle ============#
 
 # 重复状态处理的临时变量
-frame_id = 0
-is_repeat = False
-is_delay_playing = False
-DELAY_PLAYING_GAP = 2.0
-same_state_count = 1
-MAX_SAME_STATE_COUNT = 100
-protected_state = ['join_wait', 'ready_done']
+frame_id           = 0
+is_repeat          = False
+is_delay_playing   = False
+DELAY_PLAYING_GAP  = 4.0
+same_state_count   = 1
+MAX_SAME_STATE     = 100
+protected_state    = ['join_wait', 'ready_done']
 
 LogI("Cycle start ...")
 while True:
@@ -138,7 +139,7 @@ while True:
   # 重复状态处理逻辑，当重复次数大于阈值时，保存截图
   if is_repeat and False:
     same_state_count += 1
-    if same_state_count > MAX_SAME_STATE_COUNT:
+    if same_state_count > MAX_SAME_STATE:
       false_img_path = log_imgs_path+f'false_{state}.png'
       cv.imwrite(false_img_path, img)
       LogE(f"The state \"{state}\" occur to much, saving img to \"{false_img_path}\"")
@@ -166,8 +167,6 @@ while True:
       time.sleep(CLICK_GAP*3)
     
     player.send_cmd("f")
-    
-    time.sleep(CYCLE_GAP)
     
     script.act(state)
   elif state == 'playing':

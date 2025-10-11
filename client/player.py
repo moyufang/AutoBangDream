@@ -54,10 +54,8 @@ class Player:
     
   def start_playing(self, song_duration):
     
-    LogS('playing', "Start playing")
-    LogS('playing', "detecting 'is_playing'")
+    LogS('playing', "Start detecting 'is_playing'")
     while not self.health_extrator.get_is_playing(): pass
-    LogS('playing', "Start tracing first note")
     
     start_time = time.time()
     self.send_cmd(f't {int(start_time*1000000+0.5)} {self.correction_time} {self.dilation_time}')
@@ -73,6 +71,8 @@ class Player:
       #   print("save false into opps.")
       #   cv.imwrite('./play/opps/img.png', cv.cvtColor(img, cv.COLOR_HSV2BGR))
       if t_s[0] < 0.0:
+        predict_time = 0.0
+        predict_count = 0
         continue
       
       predict_time += tim+predict(t_s[0])
@@ -83,5 +83,5 @@ class Player:
     predict_time = int(predict_time*1000000+0.5)
     self.send_cmd(f"s {predict_time}")
     
-    LogS('playing', f"t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
+    LogS('playing', f"First note info: t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
     time.sleep(song_duration+5)

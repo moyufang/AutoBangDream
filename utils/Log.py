@@ -67,5 +67,6 @@ class StateFilter(logging.Filter):
     record.username = getattr(record, 'state', 'unknown')
     return True
 state_logger.addFilter(StateFilter())
-def LogS(state:str, *arg):
-  state_logger.debug(*arg, extra={'state':state})
+# def LogS(state:str, *arg):
+#   state_logger.debug(*arg, extra={'state':state})
+LogS = lambda state, *arg: state_logger.debug(*arg, extra={'state':state})

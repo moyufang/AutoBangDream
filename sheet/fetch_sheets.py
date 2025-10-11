@@ -124,7 +124,7 @@ def fetch_lack():
 
 
 if __name__ == '__main__':
-  mode = Mode.FetchSheetsHeader
+  mode = Mode.FetchLack
   if mode == Mode.FetchSheetsHeader:
     fetch_sheets_header()
   elif mode == Mode.SpecialChar:

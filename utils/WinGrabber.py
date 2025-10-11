@@ -83,7 +83,7 @@ class Grabber:
       window_region[0], window_region[1],
       self.window_width, self.window_height, True
     )
-    win32gui.SetForegroundWindow(self.handle)
+    # win32gui.SetForegroundWindow(self.handle)
 
     self.set_region(region)
 

@@ -7,10 +7,14 @@ from numpy import random as rd
 #mumu模拟器设置的分辨率
 SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720
 
-# 项目文件地址
+# 项目文件(夹)地址
 SHEETS_HEADER_PATH = './sheet/sheets_header.json'
 UI_RECOGNITION_MODEL_PATH = './UI_recognition/BangUINet.pth'
 SONG_RECOGNITION_MODEL_PATH = './song_recognition/ckpt_triplet.pth'
+
+LOG_IMGS_PATH = './UI_recognition/log_imgs/'
+UI_IMGS_PATH = './UI_recognition/UI_imgs/'
+UI_LABEL_2_STR_PATH = './UI_recognition/UI_label2str.json'
 
 # 演出模式
 class Mode(Enum):
@@ -299,7 +303,7 @@ TAG_RADIUS      = 3
 
 TCP_SEND_GAP     = 0.005
 CLICK_PERIOD     = 0.05
-CLICK_GAP        = 0.1
+CLICK_GAP        = 0.2
 INCASE_DELAY_GAP = 0.5
 
 COLOR_1_LOW, COLOR_1_HIGH = np.uint8([[155,   6, 240], [170,  12, 255]]) #
@@ -318,5 +322,5 @@ MASK_THRESHOLD = 170
 
 #============ main ============#
 
-CYCLE_GAP        = 1.5
+CYCLE_GAP        = 1.0
 

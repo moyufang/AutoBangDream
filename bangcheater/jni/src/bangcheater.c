@@ -127,18 +127,33 @@ static int touch_panic_reset_all(){
     return found_any ? commit() : 0;
 }
 static void start_player(int right_now){
-    struct timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
-    #define ADD_THRESHOLD 110000ll
-    long long cur_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
-    long long here_first_beat_time = start_time + predict_time + shift_time + correction_time;
-    if (right_now) here_first_beat_time = cur_time;
-    LogI(
-      "Calibration para:\n\tcur_time:%lld h_first_beat_time:%lld\n\tdiff:%lld\n", 
-      cur_time, here_first_beat_time, here_first_beat_time-cur_time
-    );
-    int opt_cursor = 0, time_cursor = 0, t, p;
-    short ty, contact, x, y;
+  for(int i = 0; i < MAX_CONTACTS; ++i) touch_up(i); commit();
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  #define ADD_THRESHOLD 110000ll
+  long long cur_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
+  long long here_first_beat_time = start_time + predict_time + shift_time + correction_time;
+  if (right_now) here_first_beat_time = cur_time;
+  LogI(
+    "Calibration para:\n\tcur_time:%lld h_first_beat_time:%lld\n\tdiff:%lld\n", 
+    cur_time, here_first_beat_time, here_first_beat_time-cur_time
+  );
+  
+  long long hsh = 0, hsh_base = 131, hsh_mod = 998244353ll;
+  for(int i = 0; i < opt_top; ++i){
+    hsh = ((hsh*hsh_base)+opt_list[i].ty)%hsh_mod;
+    hsh = ((hsh*hsh_base)+opt_list[i].contact)%hsh_mod;
+    hsh = ((hsh*hsh_base)+opt_list[i].x)%hsh_mod;
+    hsh = ((hsh*hsh_base)+opt_list[i].y)%hsh_mod;
+  }
+  for(int i = 0; i < time_top; ++i){
+    hsh = ((hsh*hsh_base)+time_list[i].cursor)%hsh_mod;
+    hsh = ((hsh*hsh_base)+time_list[i].time)%hsh_mod;
+  }
+  LogD("COMMANDS HASH: %lld\n", hsh);
+
+  int opt_cursor = 0, time_cursor = 0, t, p;
+  short ty, contact, x, y;
   while(opt_cursor < opt_top){
     clock_gettime(CLOCK_REALTIME, &now);
     t = now.tv_sec*1000000ll+now.tv_nsec/1000-here_first_beat_time;
@@ -178,11 +193,11 @@ static void start_player(int right_now){
 }
 static void read_commands(FILE* input){
   LogI("Read commands from '%s'\n", commands_file_path);
+  
   time_top = opt_top = 0;
   char buffer[64];
   while (fscanf(input, "%s", buffer) != EOF){
     int t, contact, x, y, pressure;
-
     switch (buffer[0]) {
       case 'b': // FIRST BEAT TIME
         fscanf(input, "%d", &first_beat_time);
@@ -195,6 +210,7 @@ static void read_commands(FILE* input){
         time_list[time_top++].cursor = opt_top;
         break;
       case 'd': // TOUCH DOWN
+        opt_list[opt_top].ty = 0;
         fscanf(input, "%hd %hd %hd",
           &opt_list[opt_top].contact,
           &opt_list[opt_top].x,
@@ -221,7 +237,6 @@ static void read_commands(FILE* input){
         break;
     }
   }
-  // LogD("time_top:%d opt_top:%d\n", time_top, opt_top);
   time_list[time_top-1].cursor = opt_top;
 }
 static int parse_input(const char* buffer){
@@ -278,7 +293,7 @@ static int parse_input(const char* buffer){
       dilation_time = strtoll(cursor, &cursor, 10);
       shift_time = rcv_time - snd_time;
       start_time = snd_time;
-      LogR("Synchronize time:\tsnd_time:%lld rcv_time:%lld\tshift_time:%lld correction_time:%d\n", snd_time, rcv_time, shift_time, correction_time);
+      LogR("Synchronize time:\nsnd_time:%lld rcv_time:%lld\nshift_time:%lld correction_time:%d\n", snd_time, rcv_time, shift_time, correction_time);
       break;
     case 's':
       predict_time = strtol(cursor, &cursor, 10);
@@ -350,14 +365,14 @@ int main(int argc, char* argv[]){
     return EXIT_FAILURE;
   }
   strcpy(commands_file_path, argv[1]);
-  FILE *commands_input = fopen(commands_file_path, "r");
-  if (commands_input == NULL){
-    LogE( "Unable to open '%s': %s\n", commands_file_path, strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  read_commands(commands_input);
+  // FILE *commands_input = fopen(commands_file_path, "r");
+  // if (commands_input == NULL){
+  //   LogE( "Unable to open '%s': %s\n", commands_file_path, strerror(errno));
+  //   exit(EXIT_FAILURE);
+  // }
+  // read_commands(commands_input);
   
-  fclose(commands_input);
+  // fclose(commands_input);
 
   //<============ Switch Mode ============>
 

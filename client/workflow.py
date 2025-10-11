@@ -36,7 +36,7 @@ trace_note_path       = \
 trace_first_note_path = \
   './play/trace_first_note.json'      # ExtractFirstNote 模式下，结果的保存地址
 
-mode = Mode.Record                 # 选择模式
+mode = Mode.WalkThroughSheet                 # 选择模式
 
 # 计算得到的参数
 is_extract_first_note = mode == Mode.TraceFirstNote  # 选择 提取第一个 note，ExtractFirstNote 专用
@@ -52,9 +52,10 @@ def save(img):
   global frame_id
   img_path = frames_path + frame_name%frame_id
   frame_id += 1
-  cv.imwrite(img_path, cv.resize(
-    img, [STD_WINDOW_WIDTH//save_scale, STD_WINDOW_HEIGHT//save_scale],
-    interpolation=cv.INTER_AREA))
+  # cv.imwrite(img_path, cv.resize(
+  #   img, [STD_WINDOW_WIDTH//save_scale, STD_WINDOW_HEIGHT//save_scale],
+  #   interpolation=cv.INTER_AREA))
+  cv.imwrite(img_path, img)
   print(f"Save img to \"{img_path}\"")
 def gss(img:None): # grab-show-save
   img = extractor.grab() if img is None else img
