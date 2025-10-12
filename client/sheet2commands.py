@@ -1,5 +1,5 @@
 from configuration import *
-from utils.ADB import push_file
+from server.ADB import push_file
 
 # 生成操作序列commands和保存为commands.sheet文件
 # commands = [

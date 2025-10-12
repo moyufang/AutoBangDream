@@ -4,6 +4,10 @@ import os
 import numpy as np
 from numpy import random as rd
 
+# 端口
+SERVER_PORT = 31415
+BANGCHEATER_PORT = 12345
+
 #mumu模拟器设置的分辨率
 SCALE, STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT = 1, 1280, 720
 
@@ -301,10 +305,13 @@ TAG_RADIUS      = 3
 
 #============ script ============#
 
-TCP_SEND_GAP     = 0.005
+TCP_SEND_GAP     = 0.01
 CLICK_PERIOD     = 0.05
-CLICK_GAP        = 0.2
-INCASE_DELAY_GAP = 0.5
+CLICK_GAP        = 0.05
+CLICK_GAP_1      = 0.1
+CLICK_GAP_2      = 0.2
+CLICK_GAP_3      = 0.4
+CLICK_GAP_4      = 0.8
 
 COLOR_1_LOW, COLOR_1_HIGH = np.uint8([[155,   6, 240], [170,  12, 255]]) #
 COLOR_2_LOW, COLOR_2_HIGH = np.uint8([[  0,   0, 150], [  5,   5, 170]]) #
@@ -323,4 +330,9 @@ MASK_THRESHOLD = 170
 #============ main ============#
 
 CYCLE_GAP        = 1.0
+
+#============ Server & Client ============#
+
+SERVER_OK = 0
+SERVER_UNKNOWN = -1
 

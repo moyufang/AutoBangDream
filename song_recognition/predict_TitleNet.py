@@ -45,8 +45,7 @@ class SongRecognition:
     # cv2.imwrite("./song_recognition/title_imgs_temp/t_img.png", t_img)
     song_id, similarity = self.get_id(t_img)
     
-    # BangDream 全游目前仅有两对同名不同谱的歌曲，但部分难度的 Level 不同，未来将在此根据 level 特殊处理
-    # 无法区分的情况仅在 Hard 及以下难度出现，一般不在使用脚本时出现，故不进一步区分
+    # BangDream 全游目前仅有三对同名不同谱的歌曲，但部分难度的 Level 不同，未来将在此根据 level 特殊处理
     x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
     l_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
     level = -1 # self.get_level(l_img)
@@ -57,6 +56,12 @@ class SongRecognition:
         (self.uc.level == Level.Hard   and level == 14) or \
         (self.uc.level == Level.Hard   and level ==  8): song_id = 467
     if song_id == 462: # 462 难度 25 21 14 7
+      if \
+        (self.uc.level == Level.Expert and level == 26) or \
+        (self.uc.level == Level.Hard   and level == 21) or \
+        (self.uc.level == Level.Hard   and level == 13) or \
+        (self.uc.level == Level.Hard   and level ==  8): song_id = 389
+    if song_id == 676: # 462 难度 25 21 14 7
       if \
         (self.uc.level == Level.Expert and level == 26) or \
         (self.uc.level == Level.Hard   and level == 21) or \

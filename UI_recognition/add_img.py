@@ -32,21 +32,25 @@ if __name__ == '__main__':
       pt += '%20s:%2d '%(s, label)
     print(pt)
   
-  for img_file in Path(LOG_IMGS_PATH).rglob('f*.png'):
+  for img_file in Path(LOG_IMGS_PATH).rglob('*.png'):
     img = cv.imread(img_file.__str__(), cv.IMREAD_UNCHANGED)
     pv.load_img(img, 'bgr')
     pv.show_img()
     cv.waitKey(1)
     
     while True:
-      label = int(input("Please input a lalel:"))
+      s = input("Please input a lalel:")
+      if s[0] == 'q': break
+      label = int(s)
       if label not in range(classes_num):
         print("illegal input:", label)
         continue
-      break
-    idx = weight[label]
-    weight[label] += 1
+      else:
+        idx = weight[label]
+        weight[label] += 1
+        
+        new_path = UI_IMGS_PATH + f"{label2str[label]}-%03d.png"%idx
+        img_file.rename(new_path)
+        print(f"Save to \"{new_path}\"")
+        break
     
-    new_path = UI_IMGS_PATH + f"{label2str[label]}-%03d.png"%idx
-    img_file.rename(new_path)
-    print(f"Save to \"{new_path}\"")

@@ -1,6 +1,6 @@
 import cv2 as cv
 from configuration import *
-from client.player import Player
+from server.player import Player
 from utils.log import LogE, LogD, LogI, LogS
 import time
 
@@ -22,16 +22,11 @@ class Script:
       'award_again':   lambda : self.click( 800, 640),
       'award_back':    lambda : self.click( 760, 440),
       'award_dialog':  lambda : (
-                                self.click( 640, 640),
-                                time.sleep(CLICK_GAP),
-                                self.click( 640, 590),
-                                time.sleep(CLICK_GAP),
-                                self.click( 640, 580),
-                                time.sleep(CLICK_GAP),
-                                self.click( 640, 560),
-                                time.sleep(CLICK_GAP),
-                                self.click( 640, 520),
-                                time.sleep(CLICK_GAP),
+                                self.click( 640, 640), time.sleep(CLICK_GAP),
+                                self.click( 640, 590), time.sleep(CLICK_GAP),
+                                self.click( 640, 580), time.sleep(CLICK_GAP),
+                                self.click( 640, 560), time.sleep(CLICK_GAP),
+                                self.click( 640, 520), time.sleep(CLICK_GAP),
                                 self.click( 640, 510),
                                 ),
       'award_level':   lambda : self.click(1080, 640),
@@ -39,14 +34,10 @@ class Script:
       'award_score':   lambda : self.click(1080, 640),
       'choose':        self._choose,
       'choose_dialog': lambda : (
-                                self.click( 876, 208),
-                                time.sleep(CLICK_GAP),
-                                self.click( 876, 284),
-                                time.sleep(CLICK_GAP),
-                                self.click( 876, 356),
-                                time.sleep(CLICK_GAP),
-                                self.click( 876, 430),
-                                time.sleep(CLICK_GAP),
+                                self.click( 876, 208), time.sleep(CLICK_GAP),
+                                self.click( 876, 284), time.sleep(CLICK_GAP),
+                                self.click( 876, 356), time.sleep(CLICK_GAP),
+                                self.click( 876, 430), time.sleep(CLICK_GAP),
                                 self.click( 780, 640)
       ),
       'failed':        lambda : self.click( 640, 440),
@@ -80,17 +71,19 @@ class Script:
     
   def _ready(self):
     if self.uc.mode == Mode.Event and self.uc.event == Event.Tour:
-      for i in range(3): self.click(304+i*408, 370)
-      time.sleep(CLICK_GAP)
+      if self.uc.level == 4:
+        for i in range(3): self.click(304+i*408, 370)
+        time.sleep(CLICK_GAP)
       for i in range(3): self.click(64+self.uc.level*80+i*408, 370)
-      time.sleep(CLICK_GAP)
+      time.sleep(CLICK_GAP_3)
     
     # ready 界面有选择难度的情况
     elif not(self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)):
-      self.click(852, 540)
-      time.sleep(INCASE_DELAY_GAP)
+      if self.uc.level == 4:
+        self.click(852, 540)
+        time.sleep(CLICK_GAP)
       self.click(600+self.uc.level*84, 540)
-      time.sleep(INCASE_DELAY_GAP)
+      time.sleep(CLICK_GAP_3)
       
     self.click(1120, 600)
     return True
@@ -119,10 +112,11 @@ class Script:
     
     # 选歌界面有选择难度的情况
     if self.uc.mode == Mode.Free or self.uc.mode == Mode.Stage:
-      self.click(1060, 520)                 # Default diff is 'Expert'
-      time.sleep(CLICK_GAP) 
+      if self.uc.level == 4:
+        self.click(1060, 520)                 # Default diff is 'Expert'
+        time.sleep(CLICK_GAP) 
       self.click(715+self.uc.level*115, 520)  # Choose song diff
-      time.sleep(CLICK_GAP)
+      time.sleep(CLICK_GAP_3)
     
     self.click(1080, 620)
     return True

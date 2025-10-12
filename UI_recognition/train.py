@@ -115,11 +115,11 @@ def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
       num_correct = (pred == label).sum().item()
       train_acc += num_correct / img.shape[0]
     end_time = time.time()
-    LogI("OneBatchTrainTime:{}".format(end_time-start_time))
+    epoch_time = end_time-start_time
     train_loss /= len(loader)
     train_acc /= len(loader)
 
-    LogI("epoch%d train_loss:%lf train_acc:%lf"%(epoch, train_loss, train_acc))
+    LogI("epoch %2d train_loss:%lf train_acc:%lf epoch_time:%.3lf"%(epoch, train_loss, train_acc, epoch_time))
 
   th.save(nnw, model_path)
 
@@ -135,7 +135,7 @@ is_load_model = True
 #============ train ============#
  
 dataset = ImgsDataset()
-batch_size = get_batch_size(64, len(dataset))
+batch_size = get_batch_size(batch_size, len(dataset))
 LogD(f"batch_size:{batch_size}")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 

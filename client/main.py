@@ -1,11 +1,11 @@
 from configuration import *
 from utils.WinGrabber import MumuGrabber
-from utils.ADB import push_file
+from server.ADB import push_file
 from utils.json_refiner import refine
 from utils.log import LogE, LogD, LogI, LogS
 from UI_recognition.predict import UIRecognition
 from song_recognition.predict_TitleNet import SongRecognition
-from client.player import Player
+from server.player import Player
 from client.script import Script
 from client.sheet2commands import sheet2commands
 import time
@@ -18,29 +18,27 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Event,
+  Mode.Free,
   Event.Compete,
-  Choose.Random,
-  Level.Expert,
+  Choose.Loop,
+  Level.Special,
   Performance.FullCombo,
   custom_performance,
   None,
-  'skilled'
+  'master'
 )
 uc = user_config
-#380926578
-#850697649
 dilation_time       =  1000000
-correction_time     = -  49000
+correction_time     = -  40000
 
 #============ Run Configuration ============#
 
-play_one_song_id    = 659
+play_one_song_id    = 686
 is_play_one_song    = False
 is_no_action        = False
 is_restart_play     = True
 is_allow_save       = True
-is_checking_3d      = False
+is_checking_3d      = True
 is_save_commands    = True
 last_state          = None
 song_duration       = 140
@@ -90,6 +88,8 @@ if True:
 if is_play_one_song:
   song_duration = create_and_push_commands(play_one_song_id, user_config)
   
+  player.send_cmd("f\n")
+  
   if is_restart_play:
     player.click(0, 1248,  32)
     time.sleep(0.6)
@@ -108,16 +108,20 @@ if is_play_one_song:
 # 重复状态处理的临时变量
 frame_id           = 0
 is_repeat          = False
+is_ready           = False
+ready_count        = 0
+MAX_READY          = 0
 is_delay_playing   = False
 DELAY_PLAYING_GAP  = 4.0
 same_state_count   = 1
 MAX_SAME_STATE     = 100
 protected_state    = ['join_wait', 'ready_done']
-
+special_state_list = ['ready']
+special_state_dict = {}
 LogI("Cycle start ...")
 while True:
   # 截图
-  if player.get_scale() == 2: player.set_scale(1)
+  if player.get_scale() == 2: player.set_scale(1); time.sleep(CYCLE_GAP)
   img = grabber.grab()[:,:,:3]
   f_img = cv.resize(img, (STD_WINDOW_WIDTH//8,STD_WINDOW_HEIGHT//8),interpolation=cv.INTER_AREA)
   th_img = to_torch_type(f_img)
@@ -144,10 +148,22 @@ while True:
       cv.imwrite(false_img_path, img)
       LogE(f"The state \"{state}\" occur to much, saving img to \"{false_img_path}\"")
       if state not in protected_state: break
-  else: last_state = state; same_state_count = 1; 
+  else: last_state = state; same_state_count = 1
+  
+  # 特殊图保存
+  if state in special_state_list:
+    if state not in special_state_dict: special_state_dict[state] = 0
+    img_path = log_imgs_path+f"{state}-%03d.png"%special_state_dict[state]
+    special_state_dict[state] += 1
+    cv.imwrite(img_path, f_img)
+    LogI(f"get state {state}, save img to \"%s\""%img_path)
   
   # 根据状态，执行操作
   if is_no_action: state = 'loading' # 不执行任何操作
+  if state == 'ready':
+    if is_ready: state = 'loading'
+    elif ready_count < MAX_READY: ready_count += 1; state = 'loading'
+    else: ready_count = 0; is_ready = True
   if state == 'ready':
     song_id, song_name, similarity = song_recognition.get_id_by_full_img(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name} similarity:{similarity}')
@@ -168,13 +184,16 @@ while True:
     
     player.send_cmd("f")
     
+    time.sleep(0.1)
+    
     script.act(state)
-  elif state == 'playing':
+  elif state == 'playing' and is_ready:
     if is_delay_playing:
       time.sleep(DELAY_PLAYING_GAP)
       is_delay_playing = False
     player.set_scale(2)
     player.start_playing(song_duration)
+    is_ready = False
   elif state in ['faliled', 'failed_again']:
     is_delay_playing = True
     script.act(state)
