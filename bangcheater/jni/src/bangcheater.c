@@ -52,6 +52,7 @@ long long start_time;
 long long shift_time = 0;
 long long correction_time;
 long long dilation_time = 1000000ll;
+long long diff_time = 0;
 int first_beat_time;
 int predict_time;
 
@@ -126,11 +127,22 @@ static int touch_panic_reset_all(){
     }
     return found_any ? commit() : 0;
 }
+static void caliboration(){
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  long long cur_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
+  long long here_first_beat_time = start_time + predict_time + shift_time + correction_time;
+  diff_time = here_first_beat_time-cur_time;
+  LogI(
+    "Calibration para:\n\tcur_time:%lld h_first_beat_time:%lld\n\tdiff:%lld\n", 
+    cur_time, here_first_beat_time, here_first_beat_time-cur_time
+  );
+
+}
 static void start_player(int right_now){
   for(int i = 0; i < MAX_CONTACTS; ++i) touch_up(i); commit();
   struct timespec now;
   clock_gettime(CLOCK_REALTIME, &now);
-  #define ADD_THRESHOLD 110000ll
   long long cur_time = now.tv_sec*1000000ll+now.tv_nsec/1000;
   long long here_first_beat_time = start_time + predict_time + shift_time + correction_time;
   if (right_now) here_first_beat_time = cur_time;
@@ -299,6 +311,11 @@ static int parse_input(const char* buffer){
       predict_time = strtol(cursor, &cursor, 10);
       start_player(0);
       break;
+    case 'C':
+      predict_time = strtol(cursor, &cursor, 10);
+      caliboration();
+      return CONTROLLER_CALIBORATION;
+      break;
     case 'f':
       commands_input = fopen(commands_file_path, "r");
       if (commands_input == NULL){
@@ -314,6 +331,7 @@ static int parse_input(const char* buffer){
     case 'q':
       return CONTROLLER_QUIT_CONNECTION;
       break;
+    case 'k':
     case 'e':
       return CONTROLLER_EXIT;
       break;
@@ -341,6 +359,9 @@ static int tcp_io(const char *buffer, char *response){
   switch (ret_code){
     case CONTROLLER_READY: return CONTROLLER_READY;
     case CONTROLLER_EXIT: return CONTROLLER_EXIT;
+    case CONTROLLER_CALIBORATION:
+      sprintf(response, "%lld", diff_time);
+      return CONTROLLER_CALIBORATION;
     default: response[0] = 0; return 0;
   }
   return 0;

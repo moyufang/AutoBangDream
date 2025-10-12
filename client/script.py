@@ -58,7 +58,7 @@ class Script:
                                 ),
       'opps_reconnect':lambda : self.click( 780, 500),
       'playing':       lambda : True,
-      'playmode':     self._play_mode,
+      'playmode':      self._play_mode,
       'ready':         self._ready,
       'ready_adjust':  lambda : self.click( 780, 500),
       'ready_done':    lambda : True,
@@ -121,7 +121,3 @@ class Script:
     self.click(1080, 620)
     return True
         
-  
-  
-  
-    

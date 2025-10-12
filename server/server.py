@@ -59,6 +59,10 @@ class Server:
       touch, x, y = int(str_list[1]), int(str_list[2]), int(str_list[3])
       self.player.click(touch, x, y)
       rp = str(SERVER_OK)
+    elif str_list[0] == 'k':
+      # 技术成熟了使用这个 self.player.send_cmd("k")
+      self.player.clr.start_bangcheater()
+      rp = str(SERVER_OK)
     else:
       rp = str(SERVER_UNKNOWN)
     return rp

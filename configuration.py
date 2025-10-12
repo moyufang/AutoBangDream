@@ -5,6 +5,7 @@ import numpy as np
 from numpy import random as rd
 
 # 端口
+MUMU_PORT = 7555
 SERVER_PORT = 31415
 BANGCHEATER_PORT = 12345
 
@@ -313,6 +314,7 @@ CLICK_GAP_2      = 0.2
 CLICK_GAP_3      = 0.4
 CLICK_GAP_4      = 0.8
 
+# 用于检测是否开启了 3d 演出、mv、3d cut in
 COLOR_1_LOW, COLOR_1_HIGH = np.uint8([[155,   6, 240], [170,  12, 255]]) #
 COLOR_2_LOW, COLOR_2_HIGH = np.uint8([[  0,   0, 150], [  5,   5, 170]]) #
 COLOR_1_POS = [640, 670]

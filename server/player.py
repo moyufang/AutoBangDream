@@ -30,8 +30,9 @@ class Player:
       )
       clr.start_bangcheater()
       clr.connect()
-    
+      self.clr = clr
       self.send_cmd = lambda cmd: clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
+      self.recv = lambda: clr.recv()
     else:
       LogE("Unknown communication mode.")
       exit(1)
@@ -53,8 +54,8 @@ class Player:
     self.send_cmd(f'u {touch}\n')
     time.sleep(TCP_SEND_GAP)
     self.send_cmd(f'c\n')
-    
-  def start_playing(self, song_duration):
+  
+  def start_playing(self, song_duration, is_caliboration:bool = False):
     
     LogS('playing', "Start detecting 'is_playing'")
     while not self.health_extrator.get_is_playing(): pass
@@ -83,10 +84,16 @@ class Player:
       if is_edge:break
     predict_time = predict_time/predict_count
     predict_time = int(predict_time*1000000+0.5)
-    self.send_cmd(f"s {predict_time}")
     
-    LogS('playing', f"First note info: t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
-    time.sleep(song_duration+5)
+    if is_caliboration:
+      self.send_cmd(f"C {predict_time}")
+      diff_time = self.recv()
+      return diff_time
+    else:
+      self.send_cmd(f"s {predict_time}")
+      LogS('playing', f"First note info: t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
+      time.sleep(song_duration+5)
+      return -1
 
 class PlayerClient:
   def __init__(self):

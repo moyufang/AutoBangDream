@@ -36,7 +36,7 @@ trace_note_path       = \
 trace_first_note_path = \
   './play/trace_first_note.json'      # ExtractFirstNote 模式下，结果的保存地址
 
-mode = Mode.WalkThroughSheet                 # 选择模式
+mode = Mode.Record                 # 选择模式
 
 # 计算得到的参数
 is_extract_first_note = mode == Mode.TraceFirstNote  # 选择 提取第一个 note，ExtractFirstNote 专用

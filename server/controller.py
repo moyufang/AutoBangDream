@@ -115,21 +115,21 @@ class LowLatencyController:
         LogE(f"controller failed to start BangCheater: {e}")
         return False
       
-  def run_commands(self, cmd):
-    results = []
+  # def run_commands(self, cmd):
+  #   results = []
     
-    start_time = time.time()
-    response = self.send_command_low_latency(cmd)
-    end_time = time.time()
+  #   start_time = time.time()
+  #   response = self.send_command_low_latency(cmd)
+  #   end_time = time.time()
     
-    if response:
-      latency = (end_time - start_time) * 1000
-      results.append(f"{cmd} -> {response} ({latency:.1f}ms)")
-      LogD(f"Executed: {cmd} -> {response} ({latency:.1f}ms)")
-    else:
-      results.append(f"{cmd} -> FAILED")
-      LogD(f"Failed: {cmd}")
-    return results[0]
+  #   if response:
+  #     latency = (end_time - start_time) * 1000
+  #     results.append(f"{cmd} -> {response} ({latency:.1f}ms)")
+  #     LogD(f"Executed: {cmd} -> {response} ({latency:.1f}ms)")
+  #   else:
+  #     results.append(f"{cmd} -> FAILED")
+  #     LogD(f"Failed: {cmd}")
+  #   return results[0]
           
   def cleanup(self):
     if self.socket:

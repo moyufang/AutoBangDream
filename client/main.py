@@ -18,11 +18,11 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Free,
+  Mode.Event,
   Event.Compete,
-  Choose.Loop,
-  Level.Special,
-  Performance.FullCombo,
+  Choose.Random,
+  Level.Normal,
+  Performance.AllPerfect,
   custom_performance,
   None,
   'master'
@@ -33,15 +33,17 @@ correction_time     = -  40000
 
 #============ Run Configuration ============#
 
-play_one_song_id    = 686
-is_play_one_song    = False
 is_no_action        = False
+
+is_caliboration     = False
+
+play_one_song_id    = 306
+is_play_one_song    = False
 is_restart_play     = True
-is_allow_save       = True
+
 is_checking_3d      = True
+
 is_save_commands    = True
-last_state          = None
-song_duration       = 140
 
 log_imgs_path       = './UI_recognition/log_imgs/'
 sheets_path         = './sheet/sheets/'
@@ -85,6 +87,26 @@ if True:
 
 #============ play one song ============#
 
+if is_caliboration:
+  song_duration = -1
+  
+  if is_restart_play:
+    player.click(0, 1248,  32)
+    time.sleep(0.6)
+    player.click(0,  650, 450)
+    time.sleep(0.6)
+    player.click(0,  760, 450)
+    time.sleep(0.6)
+    
+  player.set_scale(2)
+  diff_time = player.start_playing(song_duration, is_caliboration=True)
+  LogI("Receive diff_time:", diff_time)
+  
+  # 使用 diff_time 去更新 correction_time
+  # ...
+  
+  exit(0)
+
 if is_play_one_song:
   song_duration = create_and_push_commands(play_one_song_id, user_config)
   
@@ -102,22 +124,28 @@ if is_play_one_song:
   player.start_playing(song_duration)
   
   exit(0)
-  
+
 #============ Cycle ============#
 
 # 重复状态处理的临时变量
+is_allow_save       = True
 frame_id           = 0
-is_repeat          = False
+
+is_repeat          = True
+MAX_SAME_STATE     = 100
+same_state_count   = 1
+
 is_ready           = False
 ready_count        = 0
-MAX_READY          = 0
-is_delay_playing   = False
-DELAY_PLAYING_GAP  = 4.0
-same_state_count   = 1
-MAX_SAME_STATE     = 100
+MAX_RE_READY       = 10
+
 protected_state    = ['join_wait', 'ready_done']
 special_state_list = ['ready']
 special_state_dict = {}
+
+last_state          = None
+song_duration       = 140
+
 LogI("Cycle start ...")
 while True:
   # 截图
@@ -141,7 +169,7 @@ while True:
   else: print('.', end=''); is_repeat = True
   
   # 重复状态处理逻辑，当重复次数大于阈值时，保存截图
-  if is_repeat and False:
+  if is_repeat:
     same_state_count += 1
     if same_state_count > MAX_SAME_STATE:
       false_img_path = log_imgs_path+f'false_{state}.png'
@@ -160,13 +188,18 @@ while True:
   
   # 根据状态，执行操作
   if is_no_action: state = 'loading' # 不执行任何操作
-  if state == 'ready':
-    if is_ready: state = 'loading'
-    elif ready_count < MAX_READY: ready_count += 1; state = 'loading'
-    else: ready_count = 0; is_ready = True
+  if state == 'ready' and is_ready: 
+    if ready_count < MAX_RE_READY: ready_count += 1; state = 'loading'
+    else: ready_count = 0
   if state == 'ready':
     song_id, song_name, similarity = song_recognition.get_id_by_full_img(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name} similarity:{similarity}')
+    
+    if similarity < 0.95:
+      img_path = log_imgs_path+"unknown_song.png"
+      cv.imwrite(img_path, img)
+      LogE(f'Unknown song, save img to "{img_path}"')
+      break
     
     song_duration = create_and_push_commands(song_id, user_config)
       
@@ -176,27 +209,22 @@ while True:
       c1 = hsv_img[COLOR_1_POS[1], COLOR_1_POS[0]]
       c2 = hsv_img[COLOR_2_POS[1], COLOR_2_POS[0]]
       if ((COLOR_1_LOW <= c1).all() and (c1 <= COLOR_1_HIGH).all()) and\
-        ((COLOR_2_LOW <= c2).all() or (c2 <= COLOR_2_HIGH).all()): break
+        ((COLOR_2_LOW <= c2).all() and (c2 <= COLOR_2_HIGH).all()): break
       script.click(140, 652)
       time.sleep(CLICK_GAP*3)
-      script.click(0, 0)
+      script.click(500, 650)
       time.sleep(CLICK_GAP*3)
     
     player.send_cmd("f")
     
-    time.sleep(0.1)
+    time.sleep(0.3)
     
     script.act(state)
+    is_ready = True
   elif state == 'playing' and is_ready:
-    if is_delay_playing:
-      time.sleep(DELAY_PLAYING_GAP)
-      is_delay_playing = False
     player.set_scale(2)
     player.start_playing(song_duration)
     is_ready = False
-  elif state in ['faliled', 'failed_again']:
-    is_delay_playing = True
-    script.act(state)
   else:
     script.act(state)
     

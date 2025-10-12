@@ -14,6 +14,7 @@
 #define CONTROLLER_QUIT_CONNECTION -2
 #define CONTROLLER_READY 1
 #define CONTROLLER_READY_HASH "BANGCHEATERCONTROLLERREADY"
+#define CONTROLLER_CALIBORATION 2
 
 struct LowLatencyController{
   int port;
@@ -56,9 +57,9 @@ int launch_controller(struct LowLatencyController *clr){
   
   // 设置 socket 选项 - 重用地址
   if (setsockopt(clr->server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(clr->opt), sizeof(clr->opt))) {
-      LogE("TCP setsockopt");
-      close(clr->server_fd);
-      exit(EXIT_FAILURE);
+    LogE("TCP setsockopt");
+    close(clr->server_fd);
+    exit(EXIT_FAILURE);
   }
   
   clr->address.sin_family = AF_INET;
@@ -67,16 +68,16 @@ int launch_controller(struct LowLatencyController *clr){
   
   // 绑定端口
   if (bind(clr->server_fd, (struct sockaddr *)&clr->address, clr->addrlen) < 0) {
-      LogE("TCP bind failed");
-      close(clr->server_fd);
-      exit(EXIT_FAILURE);
+    LogE("TCP bind failed");
+    close(clr->server_fd);
+    exit(EXIT_FAILURE);
   }
   
   // 监听连接
   if (listen(clr->server_fd, 5) < 0) {
-      LogE("TCP listen failed");
-      close(clr->server_fd);
-      exit(EXIT_FAILURE);
+    LogE("TCP listen failed");
+    close(clr->server_fd);
+    exit(EXIT_FAILURE);
   }
   
   // 设置接收超时
@@ -159,7 +160,11 @@ int launch_controller(struct LowLatencyController *clr){
           is_running = 0;
           break;
         }
+        else if (rp_code == CONTROLLER_CALIBORATION){
+          //Nothing
+        }
         else if (rp_code == CONTROLLER_QUIT_CONNECTION) break;
+        
         
         // 发送响应
         if (rp_buffer[0] && send(clr->client_fd, rp_buffer, strlen(rp_buffer), 0) < 0) {
