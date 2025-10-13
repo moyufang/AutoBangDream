@@ -18,23 +18,26 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Free,
+  Mode.Event,
   Event.Compete,
   Choose.Loop,
-  Level.Normal,
-  Performance.AllPerfect,
+  Level.Expert,
+  Performance.FullCombo,
   custom_performance,
   None,
   'skilled'
 )
 uc = user_config
 dilation_time       =  1000000
-correction_time     = -  45000
+correction_time     = -  40000
 
 #============ Run Configuration ==ssssss==========#
 
-is_no_action        = False
+mumu_port = 7555
+server_port = 31415
+bangcheater_port = 12345
 
+is_no_action        = False
 is_caliboration     = False
 
 play_one_song_id    = 655
@@ -43,7 +46,14 @@ is_restart_play     = True
 
 is_checking_3d      = True
 
-is_save_commands    = True
+is_repeat          = True
+MAX_SAME_STATE     = 100
+MAX_RE_READY       = 10
+
+is_allow_save       = True
+
+protected_state    = ['join_wait', 'ready_done']
+special_state_list = ['ready']
 
 log_imgs_path       = './UI_recognition/log_imgs/'
 sheets_path         = './sheet/sheets/'
@@ -87,10 +97,9 @@ if True:
     LogS('ready', f'Try to upload "{sheet_path}"')
     push_file(commands_sheet_path)
     
-    if is_save_commands:
-      with open(commands_json_path, "w", encoding="utf-8") as file: json.dump(commands, file)
-      refine(commands_json_path)
-      LogS('ready', f'Save commands_json to "{commands_json_path}"')
+    with open(commands_json_path, "w", encoding="utf-8") as file: json.dump(commands, file)
+    refine(commands_json_path)
+    LogS('ready', f'Save commands_json to "{commands_json_path}"')
     return song_duration
 
 #============ play one song ============#
@@ -135,22 +144,12 @@ if is_play_one_song:
 
 #============ Cycle ============#
 
-# 重复状态处理的临时变量
-is_allow_save       = True
+# 循环时的临时变量
 frame_id           = 0
-
-is_repeat          = True
-MAX_SAME_STATE     = 100
 same_state_count   = 1
-
 is_ready           = False
 ready_count        = 0
-MAX_RE_READY       = 10
-
-protected_state    = ['join_wait', 'ready_done']
-special_state_list = ['ready']
 special_state_dict = {}
-
 last_state          = None
 song_duration       = 140
 
@@ -227,12 +226,13 @@ while True:
       script.click(500, 650)
       time.sleep(CLICK_GAP*3)
     
+    script.act(state)
+    time.sleep(CLICK_GAP_4)
+    
     player.send_cmd("f")
     
-    time.sleep(0.3)
-    
-    script.act(state)
     is_ready = True
+    time.sleep(CYCLE_GAP)
   elif state == 'playing' and is_ready:
     player.set_scale(2)
     player.start_playing(song_duration)

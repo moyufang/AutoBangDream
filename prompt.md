@@ -191,3 +191,112 @@ Epoch [7/20], Average Loss: 0.5794, LR: 0.007270
 5. 计算三元组损失，更新模型参数。
 
 注意：这里我们使用批次内所有样本作为负样本库，因此每个anchor都可以找到批次内前 k 难负样本（semi-hard 意义下的）。
+---------------------------------------------------------
+我的python项目后端部分已经有很高完成度了，现在缺一个UI。UI里有多个模块，每个模块对接后端的一个任务，每个任务有若干配置以及启动/停止，配置的种类有：bool变量、整数、n选1模式、多元元组输入（比如("newbee",0.95,0.3,0.2,0.07,0.03)），与此同时UI需要有一个用来显示后端 UI 的控制台输出的界面，即需要前端提供一个打印函数 log 供后端调用。请你帮我分析我的UI需求，并推荐一下前端UI的解决方案，我不需要具体的代码，我只需要大方向上的引导
+
+具体的UI包括若干个界面（之后随着功能扩展，会增加界面），每界面一个模块，简要描述如下
+（1）模块 Scriptor：
+启动/停止（调用start_scriptor()或stop_scriptor()函数），若干可供用户配置的变量（详见下方）
+（2）模块 Song Recognition：需要多个启停按钮控制多个任务的执行，不允许同时运行多个界面
+启动/停止“歌曲添加”（调用add_song()或stop_adding()）
+启动/停止“训练歌曲识别模型”（调用train_song_recognition(), stop_train_song_recognition()）
+（3）模块 UI Recognition
+启动/停止“图片添加”（调用add_img()或stop_adding()）
+启动/停止"训练UI识别模型”（调用train_UI_recognition(), stop_train_UI_recognition()
+（4）模块 Fetch：
+启动/停止“抓取歌谱”（调用fetch()），若干可供用户配置的变量（详见下方）
+（5）模块 WorkfLow：
+启动/停止“工作流”（调用workflow()），若干可供用户配置的变量（详见下方）
+
+# 模块 Scriptor 详细说明
+配置变量：
+"
+dilation_time       =  1000000 # 范围 1000000 ~ 1005000
+correction_time     = -  45000 # 范围 int32 的范围
+
+mumu_port = 7555            # 范围1024~65535
+server_port = 31415         # 范围1024~65535
+bangcheater_port = 12345    # 范围1024~65535
+
+is_no_action        = False
+is_caliboration     = False
+
+play_one_song_id    = 655     #调用check_song_id是否合法，如果不合法，提醒用户
+is_play_one_song    = False
+is_restart_play     = True
+
+is_checking_3d      = True
+
+
+is_repeat          = True
+MAX_SAME_STATE     = 100     # 范围 10 ~ 1000
+MAX_RE_READY       = 10      # 范围 0 ~ 30
+
+is_allow_save       = True
+
+protected_state    = ['join_wait', 'ready_done'] # 允许用户添加和删除合法state，调用 get_avail_state() 获取所有合法的 state
+
+special_state_list = ['ready'] # 允许用户添加和删除合法state，调用 get_avail_state() 获取所有合法的 state
+
+# 单选参数
+mode = Mode.Event # 枚举类Mode有成员 Free, Collaborate, Stage, Event, Story
+event = Event.Compete # 枚举类Event有成员 Compete, Team, Tour, Challenge, Trial, Mission
+choose = Choose.Loop # 枚举类Choose有成员 Loop, Random, ListUp, ListDown, No
+level = Level.Expert # 枚举类Level有成员 Special, Expert, Hard, Normal, Easy
+performance = Performance # 枚举类Performance有成员AllPerfect, FullCombo, Custom, DropLastCustom
+weight_title = 'skilled' # 运行用户选择合法字符串，调用 get_all_weight_title() 得到所有合法字符串
+
+# 以下是条件参数，仅在特定条件下可设置，其它条件下失效
+
+# 当 event in [Event.Tour, Event.Compete, Team] 时
+lobby = True
+"
+
+# 模块 Song Recognition 详细说明
+
+调用 add_song 时，后端用log打印出消息辅助用户进行交互，用户需要
+点击按钮 Yes, No, Drop, Stop，后端收到响应后继续执行
+如果后端收到 No，之后需要用户在编辑框输入 song_id 并交给后端处理
+
+调用 train_song_recognition 前有以下配置变量
+"
+is_load_model = True
+epoch = 20 # 范围1 ~ 100
+num_batches = 32 # 范围 1 ~ 256
+batch_size = 64 # 范围 32 ~ 128
+learn_rate = 0.01 # 范围 0.0001 ~ 0.1
+"
+调用 train_song_recognition 后，后端会用 log 打印训练信息
+
+# 模块 UI Recognition 详细说明
+
+调用 add_img 时，后端用log打印出消息辅助用户进行交互，用户需要
+点击按钮 Yes, No, Drop, Stop，后端收到响应后继续执行
+如果后端收到 No，之后需要用户在编辑框输入 img_id 并交给后端处理
+调用 train_UI_recognition 前有以下配置变量
+"
+is_load_mode = True
+epoch = 20 # 范围1 ~ 100
+batch_size = 128 # 范围 32 ~ 128
+learn_rate = 0.01 # 范围 0.0001 ~ 0.1
+"
+调用 train_UI_recognition 后，后端会用 log 打印训练信息
+
+# 模块 Fetch 详细说明
+
+有以下配置
+"
+fetch_mode = FetchMode.FetchLack # 枚举类 FetchMode 有成员 FetchOne, FetchLack, FetchSongHeader, SpecialChar
+"
+
+# 模块 Workflow 详细说明
+
+有一个区域用来显示最大 1280 * 720 的图片，后端会提供 hsv_img
+鼠标在图片上移动时，显示鼠标所知的图片像素的 HSV 颜色(调用函数get_color(x,y))和像素位置
+
+
+有以下配置
+"
+workflow_mode = WorkflowMode.Record # 枚举类 WorkflowMode 有成员 WalkThrough, WalkThroughSheet, Capture, TraceNote, TraceFristNote
+"
+

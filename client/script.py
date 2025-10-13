@@ -114,7 +114,9 @@ class Script:
     elif self.uc.choose == Choose.ListUp:
       if self.uc.mode == Mode.Stage: self.click(160, 150)
       else: self.click(380, 270)
-    elif self.uc.choose == Choose.Random: self.click(780, 540)
+    elif self.uc.choose == Choose.Random:
+      if self.uc.mode == Mode.Free: self.click(680, 650)
+      else: self.click(780, 540)
     elif self.uc.choose == Choose.No: self.click(780, 610)
     time.sleep(CLICK_GAP)
     
