@@ -8,6 +8,7 @@ from server.ADB import push_file
 # ]
 # 其中 timestamp 递增
 def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_skewer:NoteSkewer = None):
+  import bisect
   if note_skewer == None: note_skewer = NoteSkewer()
   commands = []
   
@@ -22,16 +23,26 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
     elif raw_data[-1]['type'] in ['Long', 'Slide']:
       raw_data[-1]['connections'][-1]['beat'] += big_delay
   
+  # 生成 beat 序列，后根据 beat_list 用 b2t 函数计算每个 beat 的时间戳
   bpm, base_t, t, base_b, b = 1024*1024*1024*1024*1024*1024, 0.0, 0.0, 0.0, 0.0
+  beat_list = []
   for k in range(len(raw_data)):
     item = raw_data[k]; ty = item['type']
-    if ty == "System":
-      continue
-    if ty == "BPM":
-      b = float(item['beat'])
-      t = base_t + (b-base_b)*60/bpm
-      bpm, base_t, base_b = float(item['bpm']), t, b
-      continue
+    if ty != "BPM": continue
+    b = float(item['beat'])
+    t = base_t + (b-base_b)*60/bpm
+    bpm, base_t, base_b = float(item['bpm']), t, b
+    beat_list.append((b, t, bpm))
+  beat_list.sort(key=lambda item:item[0])
+  def b2t(b:float):
+    pos = bisect.bisect_left(beat_list, b, key=lambda item:item[0])-1
+    base_b, base_t, bpm = beat_list[pos]
+    return base_t + (b-base_b)*60/bpm
+  
+  # 开始生成指令序列
+  for k in range(len(raw_data)):
+    item = raw_data[k]; ty = item['type']
+    if ty == "System" or ty == "BPM": continue
     
     if ty in ["Slide", "Long"]:
       seq = item['connections']
@@ -40,11 +51,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
     else:
       l = int(item['lane'])
       b = float(item['beat'])
-    t = base_t + (b-base_b)*60/bpm
-    
-    if ty == "BPM":
-      bpm, base_t, base_b = float(item['bpm']), t, b
-      continue
+    t = b2t(b)
     
     # pick idle touch
     touch = -1
@@ -79,7 +86,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
       
     elif ty == "Long":
       record_t = t+note_skewer.get_skew() 
-      release_t = max(record_t+MIDDLE_MIN_GAP, t+(seq[-1]['beat']-b)*60/bpm + note_skewer.get_skew())
+      release_t = max(record_t+MIDDLE_MIN_GAP, b2t(seq[-1]['beat']) + note_skewer.get_skew())
       commands.append([record_t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       if 'flick' in seq[-1] and seq[-1]['flick']:
         for i in range(1, LFLICK_COUNT):
@@ -99,12 +106,12 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
       commands.append([record_t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       for i in range(1, len(seq)):
         seq_item = seq[i]
-        record_t = max(record_t+MIDDLE_MIN_GAP, t + (seq_item['beat']-b)*60/bpm + note_skewer.get_skew())
+        record_t = max(record_t+MIDDLE_MIN_GAP, b2t(seq_item['beat']) + note_skewer.get_skew())
         commands.append([
           record_t,
           f"m {touch} {TRACK_B_X[int(seq_item['lane'])]} {TRACK_B_Y}"
         ])
-      release_t = max(record_t+MIDDLE_MIN_GAP, t+(seq[-1]['beat']-b)*60/bpm + note_skewer.get_skew())
+      release_t = max(record_t+MIDDLE_MIN_GAP, b2t(seq[-1]['beat']) + note_skewer.get_skew())
       if 'flick' in seq[-1]  and seq[-1]['flick']:
         for i in range(1, SFLICK_COUNT):
           commands.append([

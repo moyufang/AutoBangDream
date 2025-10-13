@@ -20,24 +20,24 @@ user_config = UserConfig()
 user_config.set_config(
   Mode.Event,
   Event.Compete,
-  Choose.Random,
-  Level.Normal,
-  Performance.AllPerfect,
+  Choose.Loop,
+  Level.Expert,
+  Performance.FullCombo,
   custom_performance,
   None,
-  'master'
+  'skilled'
 )
 uc = user_config
 dilation_time       =  1000000
 correction_time     = -  40000
 
-#============ Run Configuration ============#
+#============ Run Configuration ==ssssss==========#
 
 is_no_action        = False
 
 is_caliboration     = False
 
-play_one_song_id    = 306
+play_one_song_id    = 655
 is_play_one_song    = False
 is_restart_play     = True
 
@@ -225,6 +225,11 @@ while True:
     player.set_scale(2)
     player.start_playing(song_duration)
     is_ready = False
+  elif state == 'story_choose':
+    hsv_img = cv.cvtColor(grabber.grab()[:,:,:3], cv.COLOR_BGR2HSV)
+    story_color = hsv_img[STORY_POS[1], STORY_POS[0]]
+    if (STORY_LOW <= story_color).all() and (story_color <= STORY_HIGH).all():
+      script.act(state)
   else:
     script.act(state)
     

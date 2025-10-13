@@ -64,6 +64,14 @@ class Script:
       'ready_done':    lambda : True,
       'stage':         lambda : self.click(1080, 640),
       'stage_choose':  lambda : self.click(1080, 640),
+      'story':         lambda : (
+                                self.click(1200,  60), time.sleep(CLICK_GAP_2),
+                                self.click( 580,  60), time.sleep(CLICK_GAP_4),
+                                self.click( 580,  60), 
+                                ),
+      'story_choose':  lambda : self.click(1080, 640),
+      'story_dialog':  lambda : self.click( 640, 580),
+      'story_skip':    lambda : self.click( 770, 450),
       'tour':          lambda : self.click( 440, 450) if self.uc.event_config['lobby'] == 'event' else \
                                 self.click( 840, 450),
       'tour_choose':   lambda : self.click(1080, 640),

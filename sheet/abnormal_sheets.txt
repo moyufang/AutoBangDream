@@ -1,0 +1,15 @@
+异常谱面
+ 54_3 中间段弯绿跳无尾flick，直绿条有flick
+ 59_9 139b 135b none flick
+144_3 151.5b none flick
+232_4 34.5b->34.6b
+655_2 49b6l 处缺一个 single tap
+686_3 需要将部分middle note 延后，包括 234.083b->234.2b，238.2 246.2 266.2 270.2
+
+同名曲子
+389 シル・ヴ・プレジデント Hello, Happy×彩×真白
+462 シル・ヴ・プレジデント Hello, Happy world!×P丸様
+410 閃光                 Roselia
+467 閃光                 Afterglow×LAYER
+316 オレンジ             Hello, Happy World! 
+676 オレンジ             Afterglow

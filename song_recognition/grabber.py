@@ -1,4 +1,4 @@
-from client.player import Player
+from server.player import Player
 from configuration import  *
 import cv2 as cv
 import time

@@ -5,7 +5,7 @@ import json
 import easyocr
 from configuration import *
 from sheet.fetch_sheets import shave_str, special_char
-from client.player import Player
+from server.player import Player
 from configuration import *
 import torch as th
 

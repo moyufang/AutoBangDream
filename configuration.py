@@ -320,6 +320,10 @@ COLOR_2_LOW, COLOR_2_HIGH = np.uint8([[  0,   0, 150], [  5,   5, 170]]) #
 COLOR_1_POS = [640, 670]
 COLOR_2_POS = [496, 640]
 
+#用于检测故事是否读完了
+STORY_LOW,     STORY_HIGH = np.uint8([[165, 240, 240], [170, 255, 255]])
+STORY_POS   = [256, 200] 
+
 #============ song recognition ============#
 
 STD_LEVEL_FIX_TITLE_REGION   = [220, 540, 670, 576]
