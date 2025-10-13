@@ -45,30 +45,32 @@ class SongRecognition:
     # cv2.imwrite("./song_recognition/title_imgs_temp/t_img.png", t_img)
     song_id, similarity = self.get_id(t_img)
     
-    # BangDream 全游目前仅有三对同名不同谱的歌曲，但部分难度的 Level 不同，未来将在此根据 level 特殊处理
-    x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
-    l_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
-    level = -1 # self.get_level(l_img)
-    if song_id == 410: # 410 难度 26 21 14 8
-      if \
-        (self.uc.level == Level.Expert and level == 27) or \
-        (self.uc.level == Level.Hard   and level == 22) or \
-        (self.uc.level == Level.Hard   and level == 14) or \
-        (self.uc.level == Level.Hard   and level ==  8): song_id = 467
-    if song_id == 462: # 462 难度 25 21 14 7
-      if \
-        (self.uc.level == Level.Expert and level == 26) or \
-        (self.uc.level == Level.Hard   and level == 21) or \
-        (self.uc.level == Level.Hard   and level == 13) or \
-        (self.uc.level == Level.Hard   and level ==  8): song_id = 389
-    if song_id == 676: # 462 难度 25 21 14 7
-      if \
-        (self.uc.level == Level.Expert and level == 26) or \
-        (self.uc.level == Level.Hard   and level == 21) or \
-        (self.uc.level == Level.Hard   and level == 13) or \
-        (self.uc.level == Level.Hard   and level ==  8): song_id = 389
+    # BangDream 全游目前仅有三对同名不同谱的歌曲，但部分难度的 Level 不同，在此根据 level 特殊处理
+    if song_id in [389, 462, 410, 467, 316, 676]:
+      x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
+      l_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+      level = self.get_level(l_img)
+      if song_id == 410: # 410 难度 26 21 14 8
+        safe = self.uc.level in [Level.Expert, Level.Hard]
+        if(self.uc.level == Level.Expert and level == 27) or \
+          (self.uc.level == Level.Hard   and level == 22) or \
+          (self.uc.level == Level.Normal and level == 14) or \
+          (self.uc.level == Level.Easy   and level ==  8): song_id = 467
+      if song_id == 462: # 462 难度 25 21 14 7
+        safe = self.uc.level in [Level.Expert, Level.Normal, Level.Easy]
+        if(self.uc.level == Level.Expert and level == 26) or \
+          (self.uc.level == Level.Hard   and level == 21) or \
+          (self.uc.level == Level.Normal and level == 13) or \
+          (self.uc.level == Level.Easy   and level ==  8): song_id = 389
+      if song_id == 316: # 316 难度 25 19 13 7
+        safe = self.uc.level in [Level.Hard, Level.Normal]
+        if(self.uc.level == Level.Expert and level == 25) or \
+          (self.uc.level == Level.Hard   and level == 22) or \
+          (self.uc.level == Level.Normal and level == 12) or \
+          (self.uc.level == Level.Easy   and level ==  7): song_id = 676
+    else: safe = True
     
-    return song_id, self.sheets_header[str(song_id)][1], similarity
+    return song_id, self.sheets_header[str(song_id)][1], similarity, safe
   
   def _load_or_create_feature_library(self, is_load:bool = True):
     """加载或创建特征检索库"""
@@ -80,12 +82,18 @@ class SongRecognition:
     else:
       # 创建新的特征库
       feature_library = []
-      img_paths = sorted(list(self.img_dir.glob('t-*.png')))
+      img_paths = sorted(list(self.img_dir.glob('?-*.png')))
       
       LogI(f"build features library, got {len(img_paths)} imgs")
       for img_path in img_paths:
         # 从文件名提取歌曲ID
-        song_id = int(img_path.stem.split('-')[1])
+        ty = img_path.stem.split('-')[0]
+        if ty == 't':
+          song_id = int(img_path.stem.split('-')[1])
+        elif ty == 'l':
+          song_id = -int(img_path.stem.split('-')[1])
+        else:
+          raise ValueError(f"Unknown ty:\"{ty}\"")
         
         # 加载图像并提取特征
         img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
@@ -185,6 +193,13 @@ class SongRecognition:
       print(f"新歌曲已添加到检索库，ID: {new_song_id}")
       return new_song_id
   
+  def get_level(self, query_img):
+    l_img = (np.ones_like(query_img)*255).astype(np.uint8)
+    l_img[:, :64] = query_img[:, :64]
+    level_id, similarity = self.get_id(l_img)
+    if (not level_id < 0) or similarity < 0.95: raise ValueError("Unknown level")
+    return -level_id
+  
   def get_id(self, query_img):
       """
       识别查询图片对应的歌曲ID
@@ -264,7 +279,7 @@ if __name__ == '__main__':
   # print(f"识别结果: 歌曲ID {song_id}, 相似度 {similarity:.4f}")
   
   # 示例3: 获取最相似的几首歌曲
-  query_img = cv2.imread('./song_recognition/title_imgs/t-676.png', cv2.IMREAD_GRAYSCALE)
+  query_img = cv2.imread('./song_recognition/title_imgs/l-005.png', cv2.IMREAD_GRAYSCALE)
   similar_songs = recognizer.get_similar_songs(query_img, top_k=3)
   for song_id, sim in similar_songs:
       print(f"歌曲ID: {song_id}, 相似度: {sim:.4f}")

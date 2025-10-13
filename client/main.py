@@ -18,18 +18,18 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Event,
+  Mode.Free,
   Event.Compete,
   Choose.Loop,
-  Level.Expert,
-  Performance.FullCombo,
+  Level.Normal,
+  Performance.AllPerfect,
   custom_performance,
   None,
   'skilled'
 )
 uc = user_config
 dilation_time       =  1000000
-correction_time     = -  40000
+correction_time     = -  45000
 
 #============ Run Configuration ==ssssss==========#
 
@@ -73,7 +73,15 @@ if True:
     return np.transpose(cv.cvtColor(img, cv.COLOR_BGR2RGB), (2, 0, 1))
 
   def create_and_push_commands(song_id:int, user_config:UserConfig):
-    sheet_path = sheets_path+f'{song_id}_{user_config.level}.bestdori'
+    sheet_name = f'{song_id}_{user_config.level}.bestdori'
+    if not os.path.exists(sheets_path+sheet_name):
+      if user_config.level == Level.Special:
+        LogI(f"Song {song_id} has not level \"Specil\", using \"Expert\"")
+        sheet_name = f'{song_id}_3.bestdori'
+    sheet_path = sheets_path+sheet_name
+    if not os.path.exists(sheet_path):
+      raise ValueError(f"Sheet \"{sheet_path} doesn't exist\"")
+    
     commands, song_duration = sheet2commands(sheet_path, commands_sheet_path, user_config.note_skewer)
     LogS('ready', f'song_duration:{song_duration}')
     LogS('ready', f'Try to upload "{sheet_path}"')
@@ -192,8 +200,12 @@ while True:
     if ready_count < MAX_RE_READY: ready_count += 1; state = 'loading'
     else: ready_count = 0
   if state == 'ready':
-    song_id, song_name, similarity = song_recognition.get_id_by_full_img(img)
+    song_id, song_name, similarity, song_safe = song_recognition.get_id_by_full_img(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name} similarity:{similarity}')
+    
+    if not song_safe:
+      # 未来在特判掉不安全的情况
+      pass
     
     if similarity < 0.95:
       img_path = log_imgs_path+"unknown_song.png"

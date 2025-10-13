@@ -91,6 +91,12 @@ class SongRecognition:
       is_safe = False
     else: is_safe = True
     return pre_idx, self.sheets_header[str(pre_idx)], pattern, is_safe
+  
+  def parse_l_img(self, l_img):
+    l_mask = (l_img < MASK_THRESHOLD).astype(np.uint8)*255
+    l_recog = self.reader.readtext(l_mask, detail = 0, paragraph=True, text_threshold=0.8)
+    pattern = shave_str("".join(l_recog))
+    return pattern
 
 if __name__ == '__main__':
   recognition = SongRecognition(SHEETS_HEADER_PATH)
