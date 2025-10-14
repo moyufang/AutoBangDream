@@ -106,6 +106,7 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
       commands.append([record_t, f"d {touch} {TRACK_B_X[l]} {TRACK_B_Y}"])
       for i in range(1, len(seq)):
         seq_item = seq[i]
+        if "hidden" in seq_item and seq_item["hidden"]: continue
         record_t = max(record_t+MIDDLE_MIN_GAP, b2t(seq_item['beat']) + note_skewer.get_skew())
         commands.append([
           record_t,

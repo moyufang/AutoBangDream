@@ -20,4 +20,4 @@ def refine(file_path:str):
   with open(file_path, "w", encoding='utf-8') as file:
     file.write(res)
 if __name__ == '__main__':  
-  refine('./client/sample.bestdori')
+  refine('./sheet/sheets/487_4.bestdori')

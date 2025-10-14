@@ -1,0 +1,202 @@
+// src/styles/_mixins.scss
+
+// 响应式断点
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'md' {
+    @media (min-width: 768px) { @content; }
+  }
+  @if $breakpoint == 'lg' {
+    @media (min-width: 1024px) { @content; }
+  }
+  @if $breakpoint == 'xl' {
+    @media (min-width: 1280px) { @content; }
+  }
+}
+
+// 弹性布局居中
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// 绝对定位居中
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// 文字截断
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin multi-line-truncate($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// 按钮重置
+@mixin button-reset {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+// 卡片阴影
+@mixin card-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// 滚动条样式
+@mixin scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+// 输入框基础样式
+@mixin input-base {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+    outline: none;
+  }
+  
+  &:disabled {
+    background-color: #f5f7fa;
+    border-color: #e4e7ed;
+    color: #c0c4cc;
+    cursor: not-allowed;
+  }
+}
+
+// 状态颜色
+@mixin status-colors {
+  &.status-success {
+    color: $success-color;
+    background-color: rgba($success-color, 0.1);
+  }
+  
+  &.status-warning {
+    color: $warning-color;
+    background-color: rgba($warning-color, 0.1);
+  }
+  
+  &.status-error {
+    color: $error-color;
+    background-color: rgba($error-color, 0.1);
+  }
+  
+  &.status-info {
+    color: $primary-color;
+    background-color: rgba($primary-color, 0.1);
+  }
+}
+
+// 动画混合
+@mixin fade-in($duration: 0.3s) {
+  animation: fadeIn $duration ease-in-out;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+@mixin slide-in($direction: 'left', $duration: 0.3s) {
+  @if $direction == 'left' {
+    animation: slideInLeft $duration ease-out;
+    
+    @keyframes slideInLeft {
+      from { 
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to { 
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  }
+  
+  @if $direction == 'right' {
+    animation: slideInRight $duration ease-out;
+    
+    @keyframes slideInRight {
+      from { 
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to { 
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// 玻璃态效果
+@mixin glass-effect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+// 渐变文字
+@mixin gradient-text($gradient) {
+  background: $gradient;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

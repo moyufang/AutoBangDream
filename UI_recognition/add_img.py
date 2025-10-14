@@ -15,10 +15,13 @@ def load_UI_imgs():
       label2str.append(label_str)
       weight.append(0)
       classes_num += 1
+    img_id = weight[str2label[label_str]]
+    if int(count) != img_id:
+      file.rename(UI_IMGS_PATH+f"{label_str}-%03d.png"%img_id)
     weight[str2label[label_str]] += 1
     
-    with open(UI_LABEL_2_STR_PATH, "w") as file:
-      json.dump(label2str, file)
+  with open(UI_LABEL_2_STR_PATH, "w") as file:
+    json.dump(label2str, file)
   
   return classes_num, str2label, label2str, weight
 
@@ -34,13 +37,21 @@ if __name__ == '__main__':
   
   for img_file in Path(LOG_IMGS_PATH).rglob('*.png'):
     img = cv.imread(img_file.__str__(), cv.IMREAD_UNCHANGED)
+    if img.shape[0] != 160:
+      img = cv.resize(img, (160, 90))
+      cv.imwrite(img_file.__str__(), img)
+    pv.set_title(img_file.name)
     pv.load_img(img, 'bgr')
     pv.show_img()
+    
     cv.waitKey(1)
     
+    is_to_delete = False
     while True:
       s = input("Please input a lalel:")
       if s[0] == 'q': break
+      if s[0] == 'e': exit(0)
+      if s[0] == 'd': is_to_delete = True; break
       label = int(s)
       if label not in range(classes_num):
         print("illegal input:", label)
@@ -53,4 +64,7 @@ if __name__ == '__main__':
         img_file.rename(new_path)
         print(f"Save to \"{new_path}\"")
         break
+    if is_to_delete:
+      print(f"delete \"{img_file.__str__()}\"")
+      img_file.unlink()
     

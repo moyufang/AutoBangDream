@@ -40,8 +40,8 @@ class Script:
                                 self.click( 876, 430), time.sleep(CLICK_GAP),
                                 self.click( 780, 640)
       ),
-      'failed':        lambda : self.click( 640, 440),
-      'failed_again':  lambda : self.click( 680, 440),
+      'failed':        lambda : self.click( 380, 450),
+      'failed_again':  lambda : self.click( 780, 450),
       'join':          lambda : self.click(1080, 640),
       'join_loading':  lambda : True,
       'join_wait':     lambda : True,
@@ -88,11 +88,11 @@ class Script:
     # ready 界面有选择难度的情况
     elif not(self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)):
       if self.uc.level == 4:
-        self.click(852, 540)
+        self.click(860, 580)
         time.sleep(CLICK_GAP)
-      self.click(600+self.uc.level*84, 540)
+      self.click(600+self.uc.level*85, 580)
       time.sleep(CLICK_GAP_3)
-      
+    
     self.click(1120, 600)
     return True
   
@@ -115,7 +115,7 @@ class Script:
       if self.uc.mode == Mode.Stage: self.click(160, 150)
       else: self.click(380, 270)
     elif self.uc.choose == Choose.Random:
-      if self.uc.mode == Mode.Free: self.click(680, 650)
+      if self.uc.mode == Mode.Free: self.click(680, 650); time.sleep(CLICK_GAP_4)
       else: self.click(780, 540)
     elif self.uc.choose == Choose.No: self.click(780, 610)
     time.sleep(CLICK_GAP)
@@ -123,9 +123,9 @@ class Script:
     # 选歌界面有选择难度的情况
     if self.uc.mode == Mode.Free or self.uc.mode == Mode.Stage:
       if self.uc.level == 4:
-        self.click(1060, 520)                 # Default diff is 'Expert'
+        self.click(1060, 540)                 # Default diff is 'Expert'
         time.sleep(CLICK_GAP) 
-      self.click(715+self.uc.level*115, 520)  # Choose song diff
+      self.click(715+self.uc.level*115, 540)  # Choose song diff
       time.sleep(CLICK_GAP_3)
     
     self.click(1080, 620)

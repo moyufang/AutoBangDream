@@ -70,3 +70,7 @@ class Preview:
       cv.imshow(self.window_name, cv.cvtColor(img, Preview.img_type[self.type]))
     else:
       cv.imshow(self.window_name, img)
+      
+  def set_title(self, title:str=''):
+    if title == '': title = self.window_name
+    cv.setWindowTitle(self.window_name, title)

@@ -18,14 +18,14 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Event,
+  Mode.Free,
   Event.Compete,
   Choose.Loop,
   Level.Expert,
-  Performance.FullCombo,
+  Performance.AllPerfect,
   custom_performance,
   None,
-  'skilled'
+  'newbee'
 )
 uc = user_config
 dilation_time       =  1000000
@@ -40,7 +40,7 @@ bangcheater_port = 12345
 is_no_action        = False
 is_caliboration     = False
 
-play_one_song_id    = 655
+play_one_song_id    = 487
 is_play_one_song    = False
 is_restart_play     = True
 
@@ -130,6 +130,7 @@ if is_play_one_song:
   player.send_cmd("f\n")
   
   if is_restart_play:
+    time.sleep(0.6)
     player.click(0, 1248,  32)
     time.sleep(0.6)
     player.click(0,  650, 450)
@@ -210,7 +211,7 @@ while True:
       img_path = log_imgs_path+"unknown_song.png"
       cv.imwrite(img_path, img)
       LogE(f'Unknown song, save img to "{img_path}"')
-      break
+      continue
     
     song_duration = create_and_push_commands(song_id, user_config)
       
