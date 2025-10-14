@@ -15,7 +15,7 @@
   </a>
 </div>
 
-![](https://img.shields.io/badge/version-0.1.0-blue) ![](https://img.shields.io/badge/license-MIT-green) ![](https://img.shields.io/badge/python-3.8%252B-blue)
+![](https://img.shields.io/badge/version-0.1.0-blue) ![](https://img.shields.io/badge/license-MIT-green)
 
 
 AutoBangDream 是一个基于 "mumu 模拟器 + 模拟触控 + 图像识别" 的 BangDream 刷歌脚本。

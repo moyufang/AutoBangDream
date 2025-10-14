@@ -162,6 +162,15 @@ while True:
   f_img = cv.resize(img, (STD_WINDOW_WIDTH//8,STD_WINDOW_HEIGHT//8),interpolation=cv.INTER_AREA)
   th_img = to_torch_type(f_img)
   
+  # 暂停任务
+  if keyboard.is_pressed('t'):
+    LogI("Scriptor suspend")
+    while True:
+      time.sleep(0.5)
+      if keyboard.is_pressed('c'):
+        LogI("Scriptor continue")
+        break
+  
   # 检测按键，用于保存截图
   if is_allow_save and keyboard.is_pressed('s'):
     img_path = log_imgs_path+f"f%03d.png"%frame_id

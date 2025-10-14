@@ -29,5 +29,9 @@ export default defineConfig({
         changeOrigin: true
       }
     }
-  }
+  },
+  build: {
+    outDir: '../client/static',  // 构建到后端目录
+    emptyOutDir: true,
+  },
 })
