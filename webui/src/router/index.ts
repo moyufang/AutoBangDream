@@ -5,7 +5,12 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/scriptor'
+      redirect: '/controller'
+    },
+    {
+      path: '/controller',
+      name: 'Controller',
+      component: () => import('@/views/ControllerView.vue')
     },
     {
       path: '/scriptor',

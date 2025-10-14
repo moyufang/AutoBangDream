@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <AppSidebar />
+    <!-- <AppSidebar /> -->
     <main class="main-content">
       <AppHeader />
       <div class="content-area">
@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import AppSidebar from '@/components/layout/AppSidebar.vue'
+// import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 </script>
 

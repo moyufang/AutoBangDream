@@ -18,14 +18,14 @@ custom_performance = CustomPerformance()
 
 user_config = UserConfig()
 user_config.set_config(
-  Mode.Free,
+  Mode.Event,
   Event.Compete,
   Choose.Loop,
-  Level.Expert,
-  Performance.AllPerfect,
+  Level.Special,
+  Performance.FullCombo,
   custom_performance,
   None,
-  'newbee'
+  'master'
 )
 uc = user_config
 dilation_time       =  1000000
@@ -86,7 +86,7 @@ if True:
     sheet_name = f'{song_id}_{user_config.level}.bestdori'
     if not os.path.exists(sheets_path+sheet_name):
       if user_config.level == Level.Special:
-        LogI(f"Song {song_id} has not level \"Specil\", using \"Expert\"")
+        LogI(f"Song {song_id} has not level \"Special\", using \"Expert\"")
         sheet_name = f'{song_id}_3.bestdori'
     sheet_path = sheets_path+sheet_name
     if not os.path.exists(sheet_path):
