@@ -4,14 +4,13 @@ import os
 import subprocess
 import sys
 
-def git_tree_simple(path="."):
-    """简化版本的 Git 树形显示"""
+def git_tree_perfect(path="."):
+    """完美版本的 Git 树形显示"""
     try:
         original_dir = os.getcwd()
         if path != ".":
             os.chdir(path)
         
-        # 获取 Git 文件列表
         result = subprocess.run(
             ["git", "ls-files", "--exclude-standard"],
             capture_output=True,
@@ -20,7 +19,7 @@ def git_tree_simple(path="."):
         )
         
         if result.returncode != 0:
-            print("错误: Git 命令执行失败")
+            print("错误: 不是 Git 仓库")
             return
         
         files = [f.strip() for f in result.stdout.strip().split('\n') if f.strip()]
@@ -31,25 +30,54 @@ def git_tree_simple(path="."):
         
         print(f"Git Tree: {os.getcwd()}\n")
         
-        # 使用集合记录已显示的目录
+        # 使用更简单的方法：记录已显示的目录
         shown_dirs = set()
+        sorted_files = sorted(files)
         
-        for file_path in sorted(files):
+        for i, file_path in enumerate(sorted_files):
             parts = file_path.replace('\\', '/').split('/')
             
             # 显示目录结构
-            for i in range(len(parts) - 1):
-                dir_path = '/'.join(parts[:i+1])
+            for depth in range(len(parts) - 1):
+                dir_path = '/'.join(parts[:depth + 1])
                 if dir_path not in shown_dirs:
-                    indent = "    " * i
-                    connector = "└── " if i == 0 else "├── "
-                    print(f"{indent}{connector}{parts[i]}/")
+                    # 计算前缀
+                    prefix = ""
+                    for d in range(depth):
+                        # 检查这个目录后面是否还有兄弟目录
+                        has_sibling = any(
+                            f.replace('\\', '/').split('/')[d] != parts[d] 
+                            for f in sorted_files[i:] 
+                            if len(f.replace('\\', '/').split('/')) > d
+                        )
+                        prefix += "│   " if has_sibling else "    "
+                    
+                    # 检查这个目录是否是其父目录的最后一个子项
+                    is_last_dir = not any(
+                        f.replace('\\', '/').split('/')[depth] != parts[depth] 
+                        for f in sorted_files[i + 1:] 
+                        if len(f.replace('\\', '/').split('/')) > depth
+                    )
+                    
+                    connector = "└── " if is_last_dir else "├── "
+                    print(f"{prefix}{connector}{parts[depth]}/")
                     shown_dirs.add(dir_path)
             
             # 显示文件
-            indent = "    " * (len(parts) - 1)
-            connector = "└── " if len(parts) == 1 else "├── "
-            print(f"{indent}{connector}{parts[-1]}")
+            prefix = ""
+            for depth in range(len(parts) - 1):
+                # 检查这个层级后面是否还有文件
+                has_sibling = any(
+                    f.replace('\\', '/').split('/')[depth] != parts[depth] 
+                    for f in sorted_files[i + 1:] 
+                    if len(f.replace('\\', '/').split('/')) > depth
+                )
+                prefix += "│   " if has_sibling else "    "
+            
+            # 检查这个文件是否是最后一个
+            is_last_file = i == len(sorted_files) - 1
+            connector = "└── " if is_last_file else "├── "
+            print(f"{prefix}{connector}{parts[-1]}")
             
     except Exception as e:
         print(f"错误: {e}")
@@ -58,4 +86,4 @@ def git_tree_simple(path="."):
 
 if __name__ == "__main__":
     path = sys.argv[1] if len(sys.argv) > 1 else "."
-    git_tree_simple(path)
+    git_tree_perfect(path)
