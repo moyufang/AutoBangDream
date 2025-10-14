@@ -18,6 +18,11 @@ def serve_static(path):
 def start_task(module, task):
     # 任务启动逻辑
     pass
+  
+@app.route('/api/stop', methods=['POST'])
+def stop_task():
+    # 任务停止逻辑
+    pass
 
 # WebSocket支持
 from flask_socketio import SocketIO
