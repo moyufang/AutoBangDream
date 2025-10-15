@@ -133,9 +133,9 @@ def train():
   num_epochs = 60
   num_batches = 16
   print_batch = num_batches // 4
-  batch_classes = 128
+  batch_classes = 64
   is_semi_hard = False
-  learning_rate = 1e-3
+  learning_rate = 1e-2
   triplet_margin = 0.5
   accumulation_steps = 16  # 梯度累积
   scale_factor = 64.0
@@ -206,7 +206,7 @@ def train():
       if (batch_idx+1)%print_batch == 0:
         print(f"Batch: [{batch_idx}/{num_batches}], Loss: {total_loss.item()*accumulation_steps:.6f}, Batch Time per: {batch_time:.4f}")
       
-        running_loss += avg_loss.item()
+      running_loss += avg_loss.item()
     
     scheduler.step()
     

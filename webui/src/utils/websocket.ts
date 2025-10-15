@@ -17,6 +17,13 @@ export class WebSocketService {
   private messageHandlers: Map<string, ((data: any) => void)[]> = new Map()
 
   constructor(private url: string) {}
+  private getWebSocketURL(): string {
+    if (import.meta.env.PROD) {
+      return import.meta.env.VITE_WS_BASE_URL || `ws://${window.location.host}/ws`
+    } else {
+      return import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000/ws'
+    }
+  }
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {

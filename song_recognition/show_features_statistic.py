@@ -6,6 +6,7 @@ import random
 import sys
 import os
 import torch
+import re
 
 # 添加路径
 from song_recognition.predict_TitleNet import SongRecognition
@@ -14,10 +15,12 @@ from song_recognition.predict_TitleNet import SongRecognition
 def analyze_all_feature_similarity(recognizer, img_dir):
   img_dir = Path(img_dir)
   img_paths = list(img_dir.glob('t-*.png'))
-  features = []
+  features, song_id = [], []
   for img_path in img_paths:
     img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
     features.append(torch.from_numpy(recognizer.get_feature(img)))
+    id = int(re.split("[.-]", img_path.name)[1])
+    song_id.append(id)
   n = len(features)
   features = torch.stack(features)
   
@@ -30,12 +33,14 @@ def analyze_all_feature_similarity(recognizer, img_dir):
   
   similarities = []
   min_similarity = 1.0  # 初始化最小相似度
-  count, max_count = 0, n*(n-1)//2
+  count, max_count = 0, 0
   for i in range(n):
     for j in range(i+1, n):
+      if song_id[i] == song_id[j]: continue
       similarity = cosine_sim[i][j].item()
       similarities.append(similarity)
       if similarity < min_similarity: min_similarity = similarity
+      max_count += 1
       
       if count+1 % 100 == 0:
         print(f"已完成 {count + 1}/{max_count} 对分析...")
@@ -186,7 +191,7 @@ def main():
     print(f"最低5%相似度阈值: {threshold_low:.6f}")
     print(f"最高5%相似度阈值: {threshold_high:.6f}")
     print(f"低于0.5相似度的样本比例: {np.mean(np.array(similarities) < 0.5):.4f}")
-    print(f"高于0.8相似度的样本比例: {np.mean(np.array(similarities) > 0.8):.4f}")
+    print(f"高于0.95相似度的样本比例: {np.mean(np.array(similarities) > 0.95):.4f}")
 
 if __name__ == '__main__':
     main()

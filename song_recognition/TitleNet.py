@@ -28,7 +28,7 @@ class SongTitleDataset(Dataset):
     self.img_dir = Path(img_dir)
     
     # 获取所有t-*.png文件并打乱顺序
-    self.img_paths = sorted(list(self.img_dir.glob("t-*.png")))
+    self.img_paths = sorted(list(self.img_dir.glob("?-*.png")))
 
     # 创建索引到歌曲ID的映射
     self.idx_to_song_id = {}
@@ -47,7 +47,7 @@ class SongTitleDataset(Dataset):
     return len(self.img_paths)
   
   def __getitem__(self, idx):
-    return self.imgs[idx], idx
+    return self.imgs[idx], self.idx_to_song_id[idx]
   
   def augment_image(self, img_tensor):
     """对单张图片进行增强"""

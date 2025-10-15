@@ -35,7 +35,7 @@ if __name__ == '__main__':
       pt += '%20s:%2d '%(s, label)
     print(pt)
   
-  for img_file in Path(LOG_IMGS_PATH).rglob('*.png'):
+  for img_file in Path(LOG_IMGS_PATH).glob('*.png'):
     img = cv.imread(img_file.__str__(), cv.IMREAD_UNCHANGED)
     if img.shape[0] != 160:
       img = cv.resize(img, (160, 90))

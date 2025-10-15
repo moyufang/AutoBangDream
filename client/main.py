@@ -20,8 +20,8 @@ user_config = UserConfig()
 user_config.set_config(
   Mode.Event,
   Event.Compete,
-  Choose.Loop,
-  Level.Special,
+  Choose.Random,
+  Level.Expert,
   Performance.FullCombo,
   custom_performance,
   None,
@@ -40,7 +40,7 @@ bangcheater_port = 12345
 is_no_action        = False
 is_caliboration     = False
 
-play_one_song_id    = 487
+play_one_song_id    = 484
 is_play_one_song    = False
 is_restart_play     = True
 
@@ -48,7 +48,7 @@ is_checking_3d      = True
 
 is_repeat          = True
 MAX_SAME_STATE     = 100
-MAX_RE_READY       = 10
+MAX_RE_READY       = 5
 
 is_allow_save       = True
 

@@ -1,14 +1,25 @@
 // src/services/api.ts
 import axios from 'axios'
 import type { ApiResponse, TaskConfig } from './types/api'
-import type { 
+import { 
   Mode, Event, Choose, Level, Performance, 
   FetchMode, WorkflowMode 
 } from './types/enums'
 
+// 环境配置
+const getBaseURL = () => {
+  if (import.meta.env.PROD) {
+    // 生产环境：使用相对路径或配置的后端地址
+    return import.meta.env.VITE_API_BASE_URL || '/api'
+  } else {
+    // 开发环境：使用代理或 Mock
+    return '/api'
+  }
+}
+
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000
+  baseURL: getBaseURL(),
+  timeout: 10000,
 })
 
 // 请求拦截器 - 添加认证等

@@ -16,10 +16,10 @@ init_scale = 1
 player = Player('tcp', init_scale)
 grabber = player.full_grabber
 title_imgs_path = './song_recognition/title_imgs/'
-is_fix = True
+is_fix = False
 x1,y1,x2,y2 = STD_LEVEL_FIX_TITLE_REGION if is_fix else STD_LEVEL_UNFIX_TITLE_REGION
 
-mode = Mode.AddNewLevel
+mode = Mode.AddNewSong
 
 if mode == Mode.BatchGrab:
   title_imgs_path = './song_recognition/title_imgs/'
@@ -45,12 +45,13 @@ elif mode == Mode.AddNewSong:
     
     pred_idx, pred_song_title, pattern, is_safe = recognition.parse_t_img(t_img)
     
-    print(f"pred_song_id    : {pred_idx}")
-    print(f"pred_song_title : {pred_song_title}")
-    print(f"ocr_text        : {pattern}")
-    print(f"is_safe         : {is_safe}")
-    
     if is_safe:
+      print(f"pred_song_id    : {pred_idx}")
+      print(f"pred_song_title : {pred_song_title}")
+      print(f"ocr_text        : {pattern}")
+      print(f"is_safe         : {is_safe}")
+    
+      is_drop = False
       title_img_name = "t-%03d.png"%pred_idx
       y = input(f"Would you like to save meta data as \"{title_img_name}\"?\nPlease input 'y' or 'n': ")
       if y != 'y':
@@ -58,11 +59,13 @@ elif mode == Mode.AddNewSong:
         if y == 'e': break
         y = input(f"Please input a num or 'q': ")
         if y[0] == 'q': is_drop = True; print("Drop saving.")
-      else: pred_idx = int(y)
+        else: pred_idx = int(y)
       if not is_drop:
-        title_img_name = "t-%03d.png"%pred_idx
+        title_img_name = "t-%04d.png"%pred_idx
         cv.imwrite(title_imgs_path+title_img_name, t_img)
         print(f"Save to \"{title_imgs_path+title_img_name}\"")
+    else:
+      time.sleep(2.0)
 elif mode == Mode.AddNewLevel:
   from song_recognition.predict_easyocr import SongRecognition
   recognition = SongRecognition(SHEETS_HEADER_PATH)
