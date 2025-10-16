@@ -11,15 +11,16 @@
 </template>
 
 <script setup lang="ts">
-// import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .app {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background-color: $bg-color;
 }
 
 .main-content {

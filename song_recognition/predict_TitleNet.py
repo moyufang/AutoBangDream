@@ -9,19 +9,20 @@ import os
 from song_recognition.TitleNet import load_TitleNet, prepocess_img
 from utils.log import LogI, LogE, LogD, LogE
 from configuration import *
+from module_config.scriptor_config import ScriptorConfig
 
 class SongRecognition:
-  def __init__(self, ckpt_path, img_dir:str, feature_json_path:str, is_load_library:bool=True, user_config:UserConfig=None):
+  def __init__(self, ckpt_path, img_dir:str, feature_vectors_path:str, is_load_library:bool=True, user_config:ScriptorConfig=None):
     """
     歌曲识别器
     Args:
       model_path: 模型权重路径
       img_dir: 图片目录路径
-      feature_json_path: 特征向量JSON文件路径
+      feature_vectors_path: 特征向量JSON文件路径
     """
     self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     self.img_dir = Path(img_dir)
-    self.feature_json_path = Path(feature_json_path)
+    self.feature_vectors_path = Path(feature_vectors_path)
     
     # 加载模型
     self.model = load_TitleNet(ckpt_path)
@@ -45,38 +46,38 @@ class SongRecognition:
     # cv2.imwrite("./song_recognition/title_imgs_temp/t_img.png", t_img)
     song_id, similarity = self.get_id(t_img)
     
-    # BangDream 全游目前仅有三对同名不同谱的歌曲，但部分难度的 Level 不同，在此根据 level 特殊处理
+    # BangDream 全游目前仅有三对同名不同谱的歌曲，但部分难度的 level 不同，在此根据 level 特殊处理
     if song_id in [389, 462, 410, 467, 316, 676]:
       x1,y1,x2,y2 = STD_LEVEL_FIX_LEVEL_REGION if is_fix else STD_LEVEL_UNFIX_LEVEL_REGION
       l_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
       level = self.get_level(l_img)
       if song_id == 410: # 410 难度 26 21 14 8
-        safe = self.uc.level in [Level.Expert, Level.Hard]
-        if(self.uc.level == Level.Expert and level == 27) or \
-          (self.uc.level == Level.Hard   and level == 22) or \
-          (self.uc.level == Level.Normal and level == 14) or \
-          (self.uc.level == Level.Easy   and level ==  8): song_id = 467
+        safe = self.uc.diff in [Diff.Expert, Diff.Hard]
+        if(self.uc.diff == Diff.Expert and level == 27) or \
+          (self.uc.diff == Diff.Hard   and level == 22) or \
+          (self.uc.diff == Diff.Normal and level == 14) or \
+          (self.uc.diff == Diff.Easy   and level ==  8): song_id = 467
       if song_id == 462: # 462 难度 25 21 14 7
-        safe = self.uc.level in [Level.Expert, Level.Normal, Level.Easy]
-        if(self.uc.level == Level.Expert and level == 26) or \
-          (self.uc.level == Level.Hard   and level == 21) or \
-          (self.uc.level == Level.Normal and level == 13) or \
-          (self.uc.level == Level.Easy   and level ==  8): song_id = 389
+        safe = self.uc.diff in [Diff.Expert, Diff.Normal, Diff.Easy]
+        if(self.uc.diff == Diff.Expert and level == 26) or \
+          (self.uc.diff == Diff.Hard   and level == 21) or \
+          (self.uc.diff == Diff.Normal and level == 13) or \
+          (self.uc.diff == Diff.Easy   and level ==  8): song_id = 389
       if song_id == 316: # 316 难度 25 19 13 7
-        safe = self.uc.level in [Level.Hard, Level.Normal]
-        if(self.uc.level == Level.Expert and level == 25) or \
-          (self.uc.level == Level.Hard   and level == 22) or \
-          (self.uc.level == Level.Normal and level == 12) or \
-          (self.uc.level == Level.Easy   and level ==  7): song_id = 676
+        safe = self.uc.diff in [Diff.Hard, Diff.Normal]
+        if(self.uc.diff == Diff.Expert and level == 25) or \
+          (self.uc.diff == Diff.Hard   and level == 22) or \
+          (self.uc.diff == Diff.Normal and level == 12) or \
+          (self.uc.diff == Diff.Easy   and level ==  7): song_id = 676
     else: safe = True
     
     return song_id, self.sheets_header[str(song_id)][1], similarity, safe
   
   def _load_or_create_feature_library(self, is_load:bool = True):
     """加载或创建特征检索库"""
-    if self.feature_json_path.exists() and is_load:
+    if self.feature_vectors_path.exists() and is_load:
       # 从JSON文件加载特征库
-      with open(self.feature_json_path, 'r', encoding='utf-8') as f:
+      with open(self.feature_vectors_path, 'r', encoding='utf-8') as f:
         feature_library = json.load(f)
       LogI(f"features library loaded, including {len(feature_library)} songs")
     else:
@@ -118,9 +119,9 @@ class SongRecognition:
     if feature_library is None:
       feature_library = self.feature_library
     
-    with open(self.feature_json_path, 'w', encoding='utf-8') as f:
+    with open(self.feature_vectors_path, 'w', encoding='utf-8') as f:
       json.dump(feature_library, f, ensure_ascii=False, indent=2)
-    LogI(f"save features library to \"{self.feature_json_path}\"")
+    LogI(f"save features library to \"{self.feature_vectors_path}\"")
   
   def get_feature(self, img):
     """
@@ -265,7 +266,7 @@ if __name__ == '__main__':
   recognizer = SongRecognition(
     ckpt_path=ckpt_path,
     img_dir='./song_recognition/title_imgs',
-    feature_json_path='./song_recognition/feature_vectors.json',
+    feature_vectors_path='./song_recognition/feature_vectors.json',
     is_load_library=False
   )
   

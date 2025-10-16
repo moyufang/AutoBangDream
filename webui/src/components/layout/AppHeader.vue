@@ -5,7 +5,7 @@
       <button @click="toggleSidebar" class="sidebar-toggle">
         ☰
       </button>
-      <h1 class="app-title">Backend Control Panel</h1>
+      <h1 class="app-title">Auto Bang Dream</h1>
     </div>
     <nav class="main-nav">
       <router-link 
@@ -27,6 +27,7 @@ import { useAppStore } from '@/stores/app'
 const appStore = useAppStore()
 
 const routes = [
+  { name: 'Controller', path: '/controller' },
   { name: 'Scriptor', path: '/scriptor' },
   { name: 'Song Recognition', path: '/song-recognition' },
   { name: 'UI Recognition', path: '/ui-recognition' },

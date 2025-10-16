@@ -15,6 +15,7 @@
 #define CONTROLLER_READY 1
 #define CONTROLLER_READY_HASH "BANGCHEATERCONTROLLERREADY"
 #define CONTROLLER_CALIBORATION 2
+#define CONTROLLER_SONG_FINISHED 3
 
 struct LowLatencyController{
   int port;
@@ -161,6 +162,9 @@ int launch_controller(struct LowLatencyController *clr){
           break;
         }
         else if (rp_code == CONTROLLER_CALIBORATION){
+          //Nothing
+        }
+        else if (rp_code == CONTROLLER_SONG_FINISHED){
           //Nothing
         }
         else if (rp_code == CONTROLLER_QUIT_CONNECTION) break;

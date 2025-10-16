@@ -1,6 +1,7 @@
 import cv2 as cv
 from configuration import *
-from server.player import Player
+from module_config.scriptor_config import ScriptorConfig
+from server.player import WinPlayer
 from utils.log import LogE, LogD, LogI, LogS
 import time
 
@@ -13,7 +14,7 @@ class Script:
     if state not in self.state2action:
       LogE(f"\"{state}\" isn't in state2action.")
     else: return self.state2action[state]()
-  def __init__(self, player:Player, user_config:UserConfig):
+  def __init__(self, player:WinPlayer, user_config:ScriptorConfig):
     self.player = player
     self.user_config = user_config
     self.uc = self.user_config
@@ -39,7 +40,8 @@ class Script:
                                 self.click( 876, 356), time.sleep(CLICK_GAP),
                                 self.click( 876, 430), time.sleep(CLICK_GAP),
                                 self.click( 780, 640)
-      ),
+                                ),
+      'download':      lambda : self.click( 760, 580),
       'failed':        lambda : self.click( 380, 450),
       'failed_again':  lambda : self.click( 780, 450),
       'join':          lambda : self.click(1080, 640),
@@ -62,6 +64,7 @@ class Script:
       'ready':         self._ready,
       'ready_adjust':  lambda : self.click( 780, 500),
       'ready_done':    lambda : True,
+      'shop_dialog':   lambda : self.click( 760, 640),
       'stage':         lambda : self.click(1080, 640),
       'stage_choose':  lambda : self.click(1080, 640),
       'story':         lambda : (
@@ -79,18 +82,18 @@ class Script:
     
   def _ready(self):
     if self.uc.mode == Mode.Event and self.uc.event == Event.Tour:
-      if self.uc.level == 4:
+      if self.uc.diff == 4:
         for i in range(3): self.click(304+i*408, 370)
         time.sleep(CLICK_GAP)
-      for i in range(3): self.click(64+self.uc.level*80+i*408, 370)
+      for i in range(3): self.click(64+self.uc.diff*80+i*408, 370)
       time.sleep(CLICK_GAP_3)
     
     # ready 界面有选择难度的情况
     elif not(self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)):
-      if self.uc.level == 4:
+      if self.uc.diff == 4:
         self.click(860, 580)
         time.sleep(CLICK_GAP)
-      self.click(600+self.uc.level*85, 580)
+      self.click(600+self.uc.diff*85, 580)
       time.sleep(CLICK_GAP_3)
     
     self.click(1120, 600)
@@ -108,7 +111,7 @@ class Script:
   
   def _choose(self):
     if self.uc.choose == Choose.Loop: pass
-    elif self.uc.choose == Choose.ListDowm:
+    elif self.uc.choose == Choose.ListDown:
       if self.uc.mode == Mode.Stage: self.click(160, 310)
       else: self.click(380, 420)
     elif self.uc.choose == Choose.ListUp:
@@ -122,10 +125,7 @@ class Script:
     
     # 选歌界面有选择难度的情况
     if self.uc.mode == Mode.Free or self.uc.mode == Mode.Stage:
-      if self.uc.level == 4:
-        self.click(1060, 540)                 # Default diff is 'Expert'
-        time.sleep(CLICK_GAP) 
-      self.click(715+self.uc.level*115, 540)  # Choose song diff
+      self.click(715+self.uc.diff*115, 540)  # Choose song diff
       time.sleep(CLICK_GAP_3)
     
     self.click(1080, 620)

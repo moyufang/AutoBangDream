@@ -1,5 +1,7 @@
 from configuration import *
+from module_config.scriptor_config import NoteSkewer
 from server.ADB import push_file
+import bisect
 
 # 生成操作序列commands和保存为commands.sheet文件
 # commands = [
@@ -8,7 +10,6 @@ from server.ADB import push_file
 # ]
 # 其中 timestamp 递增
 def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_skewer:NoteSkewer = None):
-  import bisect
   if note_skewer == None: note_skewer = NoteSkewer()
   commands = []
   

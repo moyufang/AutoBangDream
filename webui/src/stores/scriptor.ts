@@ -31,6 +31,16 @@ export const useScriptorStore = defineStore('scriptor', () => {
     lobby: true
   })
 
+  const updateConfig = (key:string, value:any) => {
+    (config.value as any)[key] = value
+  }
+
+  // 批量更新配置
+  const updateMultipleConfig = (newConfig:any) => {
+    Object.assign(config.value, newConfig)
+  }
+
+
   // 日志
   const logs = ref<string[]>([])
   
@@ -59,6 +69,8 @@ export const useScriptorStore = defineStore('scriptor', () => {
 
   return {
     config,
+    updateConfig,
+    updateMultipleConfig,
     logs,
     availableStates,
     availableWeightTitles,

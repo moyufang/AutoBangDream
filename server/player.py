@@ -1,6 +1,7 @@
 import time
 import socket
 import numpy as np
+from abc import ABC, abstractmethod
 from server.controller import LowLatencyController
 from server.ADB import ADB
 from utils.WinGrabber import *
@@ -9,7 +10,25 @@ from play.note_extractor import HealthExtractor, NoteExtractor
 from play.predict import predict
 from configuration import *
 
-class Player:
+class PlayerInterface(ABC):
+  @abstractmethod
+  def click(self, touch:int, x:int, y:int)->None: pass
+  @abstractmethod
+  def set_scale(self, scale:int)->None: pass
+  @abstractmethod
+  def get_scale(self)->int: pass
+  @abstractmethod
+  def set_caliboration_parameters(self, dilation_time:int, correction_time:int)->None: pass
+  @abstractmethod
+  def start_playing(self, is_caliboration:bool)->int: pass
+  @abstractmethod
+  def stop_playing(self): pass
+  @abstractmethod
+  def restart_bangcheater(self): pass
+  @abstractmethod
+  def wait_finish(self, timeout:int)->bool: pass
+
+class WinPlayer(PlayerInterface):
   def __init__(self, communication_mode:str='tcp', init_scale=1):
     SCALE = init_scale
 
@@ -20,33 +39,21 @@ class Player:
     
     self.communication_mode = communication_mode
     if self.communication_mode == 'stdio':
-      adb = ADB()
-      self.send_cmd = lambda cmd: adb.write(cmd+'\n')
-      self.recv = lambda : adb.read()
+      self.adb = ADB()
+      self.send_cmd = lambda cmd: self.adb.write(cmd+'\n')
+      self.recv = lambda timeout: self.adb.read()
     elif self.communication_mode == 'tcp':
-      clr = LowLatencyController(
+      self.clr = LowLatencyController(
         adb_path="adb",
         device=f"127.0.0.1:{MUMU_PORT}",
         remote_port=BANGCHEATER_PORT
       )
-      clr.start_bangcheater()
-      clr.connect()
-      self.clr = clr
-      self.send_cmd = lambda cmd: clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
-      self.recv = lambda: clr.recv()
+      self.restart_bangcheater()
+      self.send_cmd = lambda cmd: self.clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
+      self.recv = lambda *arg: self.clr.recv(arg)
     else:
       LogE("Unknown communication mode.")
       exit(1)
-  def set_scale(self, scale):
-    if scale == self.full_grabber.scale: return
-    self.full_grabber.set_window(scale)
-    self.track_grabber.set_window(scale)
-  def get_scale(self):
-    return self.full_grabber.scale
-  def set_caliboration_para(self, dilation_time, correction_time):
-    self.dilation_time = dilation_time
-    self.correction_time = correction_time
-    
   def click(self, touch, x, y):
     self.send_cmd(f'd {touch} {x} {y}\n')
     time.sleep(TCP_SEND_GAP)
@@ -55,8 +62,16 @@ class Player:
     self.send_cmd(f'u {touch}\n')
     time.sleep(TCP_SEND_GAP)
     self.send_cmd(f'c\n')
-  
-  def start_playing(self, song_duration, is_caliboration:bool = False):
+  def set_scale(self, scale):
+    if scale == self.full_grabber.scale: return
+    self.full_grabber.set_window(scale)
+    self.track_grabber.set_window(scale)
+  def get_scale(self):
+    return self.full_grabber.scale
+  def set_caliboration_parameters(self, dilation_time, correction_time):
+    self.dilation_time = dilation_time
+    self.correction_time = correction_time
+  def start_playing(self, is_caliboration:bool = False):
     
     LogS('playing', "Start detecting 'is_playing'")
     while not self.health_extrator.get_is_playing(): pass
@@ -93,12 +108,25 @@ class Player:
     else:
       self.send_cmd(f"s {predict_time}")
       # LogS('playing', f"First note info: t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
-      time.sleep(song_duration+5)
       return -1
-    
-class PlayerServer:
+  def stop_playing(self):
+    # 技术成熟了使用这个 self.player.send_cmd("k")
+    self.restart_bangcheater()
+  def wait_finish(self, timeout:int=300):
+    try:
+      return str(self.recv(timeout)) == "F"
+    except socket.timeout:
+      return False
+  def restart_bangcheater(self):
+    if self.communication_mode == 'tcp':
+      self.clr.start_bangcheater()
+      self.clr.connect()
+    elif self.communication_mode == 'stdio':
+      self.adb.start_bangcheater()
+
+class FakeServer:
   def __init__(self):
-    self.player = Player('tcp', init_scale=1)
+    self.player = WinPlayer('tcp', init_scale=1)
     self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # 设置地址重用
     self.server_socket.bind(('localhost', SERVER_PORT))
@@ -138,41 +166,56 @@ class PlayerServer:
     if str_list[0] == 's':
       new_scale = int(str_list[1])
       self.player.set_scale(new_scale)
-      rp = str(SERVER_OK)
+      rp = str(ServerResponse.OK)
     elif str_list[0] == 'g':
       rp = str(self.player.get_scale())
+    elif str_list[0] == 't':
+      self.player.set_caliboration_parameters(int(str_list[1]), int(str_list[2]))
+      rp = str(ServerResponse.OK)
     elif str_list[0] == 'i':
       img = self.player.full_grabber.grab()[:,:,:3]
       rp = img.tobytes()
     elif str_list[0] == 'p':
-      song_duration = int(str_list[1])
-      self.player.start_playing(song_duration)
-      rp = str(SERVER_OK)
+      is_caliboration = bool(str_list[1])
+      self.player.start_playing(is_caliboration)
+      rp = str(ServerResponse.OK)
     elif str_list[0] == 'c':
       touch, x, y = int(str_list[1]), int(str_list[2]), int(str_list[3])
       self.player.click(touch, x, y)
-      rp = str(SERVER_OK)
+      rp = str(ServerResponse.OK)
+    elif str_list[0] == 'r':
+      self.player.restart_bangcheater()
+      rp = str(ServerResponse.OK)
     elif str_list[0] == 'k':
-      # 技术成熟了使用这个 self.player.send_cmd("k")
-      self.player.clr.start_bangcheater()
-      rp = str(SERVER_OK)
+      self.player.stop_playing()
+      rp = str(ServerResponse.OK)
+    elif str_list[0] == 'w':
+      timeout = int(str_list[1])
+      if self.player.wait_finish(timeout): rp = str(ServerResponse.OK)
+      else: rp = str(ServerResponse.TIMEOUT_FAILED)
     else:
-      rp = str(SERVER_UNKNOWN)
+      rp = str(ServerResponse.UNKNOWN)
     return rp
 
-class PlayerClient:
+class ClientPlayer:
   def __init__(self):
     self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   def __del__(self):
     self.client.close()
+  def get_int_rp(self):
+    return int(self.client.recv(1024).decode('utf-8'))
+  def click(self, touch:int, x:int, y:int):
+    self.client.send(f"c {touch} {x} {y}".encode('utf-8'))
+    return self.get_int_rp()
   def set_scale(self, scale):
     self.client.send(f"s {scale}".encode('utf-8'))
-    rp = int(self.client.recv(1024).decode('utf-8'))
-    return rp == SERVER_OK
+    return self.get_int_rp()
   def get_scale(self):
     self.client.send(f"g".encode('utf-8'))
-    rp = int(self.client.recv(1024).decode('utf-8'))
-    return rp
+    return self.get_int_rp()
+  def set_caliboration_parameters(self, dilation_time, correction_time):
+    self.client.send(f"t {dilation_time} {correction_time}")
+    return self.get_int_rp()
   def grab_full_img(self):
     self.client.send(f"i".encode('utf-8'))
     
@@ -189,14 +232,19 @@ class PlayerClient:
       img = None
       raise ValueError(f"receive partial data: expect {expected_size}bytes but actual {len(rp)} bytes")
     return img
-  def start_playing(self, song_duration:int):
-    self.client.send(f"p {song_duration}".encode('utf-8'))
-    rp = int(self.client.recv(1024).decode('utf-8'))
-    return rp
-  def click(self, touch:int, x:int, y:int):
-    self.client.send(f"c {touch} {x} {y}".encode('utf-8'))
-    rp = int(self.client.recv(1024).decode('utf-8'))
-    return rp
+  def start_playing(self, is_caliboration:bool = False):
+    self.client.send(f"p {is_caliboration}".encode('utf-8'))
+    return self.get_int_rp()
+  def stop_playing(self):
+    self.client.send(f'k')
+    return self.get_int_rp()
+  def wait_finish(self, timeout:int):
+    self.client.send(f"w {timeout}".encode('utf-8'))
+    return self.get_int_rp()
+  def restart_bangcheater(self):
+    self.client.send(f"r")
+    return self.get_int_rp()
+  # Used to debug
   def parse_cmd(self, cmd):
     str_list = cmd.split(' ')
     if str_list[0] == 's':
@@ -207,7 +255,7 @@ class PlayerClient:
       LogI("Got scale:", scale)
     elif str_list[0] == 'i':
       img = self.grab_full_img()
-      
+      return img
     elif str_list[0] == 'p':
       song_duration = 140
       self.start_playing(song_duration)
@@ -225,12 +273,12 @@ class PlayerClient:
       self.client.close()
   
 if __name__ == "__main__":
-  client = PlayerClient()
+  client = ClientPlayer()
   client.connect()
     
   while True:
     cmd = input("> ")
     client.parse_cmd(cmd)
 
-if __name__ == '__main__':
-  player = Player('tcp', init_scale=1)
+# if __name__ == '__main__':
+#   player = WinPlayer('tcp', init_scale=1)

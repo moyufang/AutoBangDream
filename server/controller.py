@@ -51,13 +51,13 @@ class LowLatencyController:
     self.socket.sendall(command.encode('utf-8'))
     return True
     
-  def recv(self):
+  def recv(self, recv_timeout:int=RECV_TIMEOUT):
     # 接收响应（带超时）
     try:
-      self.socket.settimeout(RECV_TIMEOUT)
+      self.socket.settimeout(recv_timeout)
       response = self.socket.recv(1024).decode('utf-8').strip()
     except socket.timeout:
-      LogE(f"Receive timeout ({RECV_TIMEOUT}s)")
+      LogE(f"Receive timeout ({recv_timeout}s)")
       raise socket.timeout
     return response
   

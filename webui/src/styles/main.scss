@@ -1,6 +1,6 @@
 // src/styles/main.scss
-@import 'variables';
-@import 'mixins';
+@import './_variable';
+@import './_mixins';
 
 * {
   margin: 0;

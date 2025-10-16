@@ -1,46 +1,40 @@
-from configuration import *
-from utils.WinGrabber import MumuGrabber
-from server.ADB import push_file
-from utils.json_refiner import refine
-from utils.log import LogE, LogD, LogI, LogS
-from UI_recognition.predict import UIRecognition
-from song_recognition.predict_TitleNet import SongRecognition
-from server.player import Player
-from client.script import Script
-from client.sheet2commands import sheet2commands
 import time
 import cv2 as cv
 import keyboard
+from configuration import *
+from module_config.scriptor_config import *
+from utils.json_refiner import refine
+from utils.log import LogE, LogD, LogI, LogS
+from server.ADB import push_file
+from server.player import WinPlayer
+from UI_recognition.predict import UIRecognition
+from song_recognition.predict_TitleNet import SongRecognition
+from client.script import Script
+from client.sheet2commands import sheet2commands
 
 #============ User Configuration ============#
 
-custom_performance = CustomPerformance()
-
-user_config = UserConfig()
+user_config = ScriptorConfig()
 user_config.set_config(
   Mode.Event,
   Event.Compete,
-  Choose.Random,
-  Level.Expert,
-  Performance.FullCombo,
-  custom_performance,
-  None,
-  'master'
+  Choose.Loop,
+  Diff.Expert,
+  Performance.Custom,
+  {},
 )
 uc = user_config
+uc.set_weights(uc.weights_map['master'])
+
+#============ Run Configuration ============#
+
 dilation_time       =  1000000
 correction_time     = -  40000
-
-#============ Run Configuration ==ssssss==========#
-
-mumu_port = 7555
-server_port = 31415
-bangcheater_port = 12345
 
 is_no_action        = False
 is_caliboration     = False
 
-play_one_song_id    = 484
+play_one_song_id    = 316
 is_play_one_song    = False
 is_restart_play     = True
 
@@ -55,8 +49,8 @@ is_allow_save       = True
 protected_state    = ['join_wait', 'ready_done']
 special_state_list = ['ready']
 
-log_imgs_path       = './UI_recognition/log_imgs/'
-sheets_path         = './sheet/sheets/'
+log_imgs_path       = LOG_IMGS_PATH
+sheets_path         = SHEETS_PATH
 commands_sheet_path = './client/commands.sheet'
 commands_json_path  = './client/commands.json'
 
@@ -65,16 +59,16 @@ commands_json_path  = './client/commands.json'
 if True:
   ui_recognition = UIRecognition()
   song_recognition = SongRecognition(
-    ckpt_path='./song_recognition/ckpt_triplet.pth',
-    img_dir='./song_recognition/title_imgs',
-    feature_json_path='./song_recognition/feature_vectors.json',
+    ckpt_path=SONG_RECOGNITION_MODEL_PATH,
+    img_dir=TITLE_IMGS_PATH,
+    feature_vectors_path=FEATURE_VECTORS_PATH,
     is_load_library=True,
     user_config=user_config
   )
 
-  player = Player('tcp', init_scale=1)
+  player = WinPlayer('tcp', init_scale=1)
   script = Script(player, user_config)
-  player.set_caliboration_para(dilation_time, correction_time)
+  player.set_caliboration_parameters(dilation_time, correction_time)
   grabber = player.full_grabber
 
   def to_torch_type(img):
@@ -82,17 +76,17 @@ if True:
     # 然后 img 将被转换成 RGB 色彩的 (C,H,W) 供图像预测
     return np.transpose(cv.cvtColor(img, cv.COLOR_BGR2RGB), (2, 0, 1))
 
-  def create_and_push_commands(song_id:int, user_config:UserConfig):
-    sheet_name = f'{song_id}_{user_config.level}.bestdori'
+  def create_and_push_commands(song_id:int, user_config:ScriptorConfig):
+    sheet_name = f'{song_id}_{user_config.diff}.bestdori'
     if not os.path.exists(sheets_path+sheet_name):
-      if user_config.level == Level.Special:
-        LogI(f"Song {song_id} has not level \"Special\", using \"Expert\"")
+      if user_config.diff == Diff.Special:
+        LogI(f"Song {song_id} has not diff \"Special\", using \"Expert\"")
         sheet_name = f'{song_id}_3.bestdori'
     sheet_path = sheets_path+sheet_name
     if not os.path.exists(sheet_path):
       raise ValueError(f"Sheet \"{sheet_path} doesn't exist\"")
     
-    commands, song_duration = sheet2commands(sheet_path, commands_sheet_path, user_config.note_skewer)
+    commands, song_duration = sheet2commands(sheet_path, commands_sheet_path, user_config)
     LogS('ready', f'song_duration:{song_duration}')
     LogS('ready', f'Try to upload "{sheet_path}"')
     push_file(commands_sheet_path)
@@ -116,7 +110,7 @@ if is_caliboration:
     time.sleep(0.6)
     
   player.set_scale(2)
-  diff_time = player.start_playing(song_duration, is_caliboration=True)
+  diff_time = player.start_playing(is_caliboration=True)
   LogI("Receive diff_time:", diff_time)
   
   # 使用 diff_time 去更新 correction_time
@@ -139,7 +133,8 @@ if is_play_one_song:
     time.sleep(0.6)
     
   player.set_scale(2)
-  player.start_playing(song_duration)
+  player.start_playing(is_caliboration=False)
+  time.sleep(song_duration+5)
   
   exit(0)
 
@@ -212,9 +207,21 @@ while True:
     song_id, song_name, similarity, song_safe = song_recognition.get_id_by_full_img(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name} similarity:{similarity}')
     
+    # 在 ready界面可选择难度的情况下，根据其它难度的level，特判掉不安全的情况
     if not song_safe:
-      # 未来在特判掉不安全的情况
-      pass
+      ori_level = user_config.diff
+      if song_id in [316, 676]:
+        user_config.diff = Diff.Hard
+        player.click(0, 770, 580)
+        time.sleep(CLICK_GAP_4)
+        song_id, song_name, similarity, song_safe = song_recognition.get_id_by_full_img(grabber.grab()[:,:,:3])
+      if song_id in [410, 467, 389, 462]:
+        user_config.diff = Diff.Expert  
+        player.click(0, 860, 580)
+        time.sleep(CLICK_GAP_4)
+        song_id, song_name, similarity, song_safe = song_recognition.get_id_by_full_img(grabber.grab()[:,:,:3])
+      user_config.diff = ori_level
+    if not song_safe: raise RuntimeError("Cannot distinguish this same title song")
     
     if similarity < 0.95:
       img_path = log_imgs_path+"unknown_song.png"
@@ -245,7 +252,8 @@ while True:
     time.sleep(CYCLE_GAP)
   elif state == 'playing' and is_ready:
     player.set_scale(2)
-    player.start_playing(song_duration)
+    player.start_playing(is_caliboration=False)
+    time.sleep(song_duration+5)
     is_ready = False
   elif state == 'story_choose':
     hsv_img = cv.cvtColor(grabber.grab()[:,:,:3], cv.COLOR_BGR2HSV)

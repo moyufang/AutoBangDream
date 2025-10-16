@@ -3,11 +3,15 @@
   <div class="controller-view">
     <h1>Controller Module</h1>
     <p>This is the Controller module view.</p>
-    <!-- 后续会添加具体内容 -->
+    <h2>{{ appStore.currentRunningTask }}</h2>
   </div>
 </template>
 
 <script setup lang="ts">
+
+import { useAppStore } from '@/stores/app';
+const appStore = useAppStore();
+
 // 模块逻辑将在后续添加
 </script>
 

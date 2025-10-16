@@ -200,8 +200,7 @@ static void start_player(int right_now){
       ++time_cursor;
     }
   }
-
-    fprintf(stderr, "Finished playing.\n");
+  fprintf(stderr, "Finished playing.\n");
 }
 static void read_commands(FILE* input){
   LogI("Read commands from '%s'\n", commands_file_path);
@@ -327,17 +326,14 @@ static int parse_input(const char* buffer){
       break;
     case 'n':
       start_player(1);
-      break;
+      return CONTROLLER_SONG_FINISHED
     case 'q':
       return CONTROLLER_QUIT_CONNECTION;
-      break;
     case 'k':
     case 'e':
       return CONTROLLER_EXIT;
-      break;
     case 'p':
       return CONTROLLER_READY;
-      break;
     default:
       break;
   }
@@ -362,6 +358,9 @@ static int tcp_io(const char *buffer, char *response){
     case CONTROLLER_CALIBORATION:
       sprintf(response, "%lld", diff_time);
       return CONTROLLER_CALIBORATION;
+    case CONTROLLER_SONG_FINISHED:
+      sprintf(response, "F");
+      return CONTROLLER_SONG_FINISHED;
     default: response[0] = 0; return 0;
   }
   return 0;
