@@ -25,7 +25,7 @@ def load_UI_imgs():
   
   return classes_num, str2label, label2str, weight
 
-if __name__ == '__main__':
+def start():
   pv = Preview(4)
   classes_num, str2label, label2str, weight = load_UI_imgs()
   for i in range((3+classes_num)//4):
@@ -67,4 +67,7 @@ if __name__ == '__main__':
     if is_to_delete:
       print(f"delete \"{img_file.__str__()}\"")
       img_file.unlink()
+      
+if __name__ == '__main__':
+  start()
     

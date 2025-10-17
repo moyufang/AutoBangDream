@@ -41,10 +41,11 @@ class Script:
                                 self.click( 876, 430), time.sleep(CLICK_GAP),
                                 self.click( 780, 640)
                                 ),
+      'compete':       lambda : self.click(1080, 640) if self.uc.mode == Mode.Event else self.click(  32, 32),
       'download':      lambda : self.click( 760, 580),
       'failed':        lambda : self.click( 380, 450),
       'failed_again':  lambda : self.click( 780, 450),
-      'join':          lambda : self.click(1080, 640),
+      'join':          lambda : self.click(1080, 640) if self.uc.mode == Mode.Collaborate else self.click(  32, 32),
       'join_loading':  lambda : True,
       'join_wait':     lambda : True,
       'join_exit':     lambda : self.click(  32,  32),
@@ -72,6 +73,7 @@ class Script:
                                 self.click( 580,  60), time.sleep(CLICK_GAP_4),
                                 self.click( 580,  60), 
                                 ),
+      'story':         lambda : self.click(1080, 640),
       'story_choose':  lambda : self.click(1080, 640),
       'story_dialog':  lambda : self.click( 640, 580),
       'story_skip':    lambda : self.click( 770, 450),
@@ -79,7 +81,7 @@ class Script:
                                 self.click( 840, 450),
       'tour_choose':   lambda : self.click(1080, 640),
     }
-    
+
   def _ready(self):
     if self.uc.mode == Mode.Event and self.uc.event == Event.Tour:
       if self.uc.diff == 4:
@@ -89,12 +91,18 @@ class Script:
       time.sleep(CLICK_GAP_3)
     
     # ready 界面有选择难度的情况
-    elif not(self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)):
+    elif not self.uc.get_is_fix():
       if self.uc.diff == 4:
         self.click(860, 580)
         time.sleep(CLICK_GAP)
       self.click(600+self.uc.diff*85, 580)
       time.sleep(CLICK_GAP_3)
+      
+    if self.uc.mode == Mode.Stage:
+      self.click(210, 390)
+      time.sleep(CLICK_GAP_4*2)
+      self.click(640, 520)
+      time.sleep(CLICK_GAP_4*2)
     
     self.click(1120, 600)
     return True
@@ -124,7 +132,7 @@ class Script:
     time.sleep(CLICK_GAP)
     
     # 选歌界面有选择难度的情况
-    if self.uc.mode == Mode.Free or self.uc.mode == Mode.Stage:
+    if self.uc.get_is_fix():
       self.click(715+self.uc.diff*115, 540)  # Choose song diff
       time.sleep(CLICK_GAP_3)
     

@@ -197,7 +197,7 @@ Epoch [7/20], Average Loss: 0.5794, LR: 0.007270
 我对 UI 的要求有
 1. UI 里有多个模块，不同模块用界面内的 Tab 标签进行切换，每个模块对接后端的一个或多个任务，每个任务有若干配置以及启动/停止，配置的种类有：bool变量、整数、n选1模式、多元元组输入（比如("newbee",0.95,0.3,0.2,0.07,0.03)）。每次配置完，warpper会自动保存，使得下次加载时使用新配置。
 2. UI 需要有一个用来显示后端控制台输出的区域，即需要前端提供一个打印函数 log 供后端调用，每个模块都有一个独立的显示后端控制台输出区域。
-3. 同一模块中的所有任务都是互斥的，当某个任务运行时，除非停止后，不能运行其它任务。但是不同模块之间的任务是可以并行/并发的。
+3. 不同模块的不同任务有时是可并行的，有时是互斥，后端wrapper会自动判断并通知前端
 4. UI 开发中，用于配置变量的组件需要逻辑与样式分离(比如radio样式可以是经典的圆点，也可以是某些自定义icon，toggle也可以是自定义图标或者产生其它css美化效果)
 5. UI 开发中，前端使用 mock 去模拟后端 API
 6. 我的后端是基于 python 的，最后需要有一个 python 脚本 wrapper.py 包装并控制好所有后端功能，然后与前端 UI 进行通信。
@@ -252,7 +252,7 @@ special_state_list = ['ready'] # 允许用户添加和删除合法state，调用
 mode = Mode.Event # 枚举类Mode有成员 Free, Collaborate, Stage, Event, Story
 event = Event.Compete # 枚举类Event有成员 Compete, Team, Tour, Challenge, Trial, Mission
 choose = Choose.Loop # 枚举类Choose有成员 Loop, Random, ListUp, ListDown, No
-level = Level.Expert # 枚举类Level有成员 Special, Expert, Hard, Normal, Easy
+diff = Diff.Expert # 枚举类Diff有成员 Special, Expert, Hard, Normal, Easy
 performance = Performance # 枚举类Performance有成员AllPerfect, FullCombo, Custom, DropLastCustom
 weight_title = 'skilled' # 运行用户选择合法字符串，调用 get_all_weight_title() 得到所有合法字符串
 
@@ -310,6 +310,8 @@ fetch_mode = FetchMode.FetchLack # 枚举类 FetchMode 有成员 FetchOne, Fetch
 workflow_mode = WorkflowMode.Record # 枚举类 WorkflowMode 有成员 WalkThrough, WalkThroughSheet, Capture, TraceNote, TraceFristNote
 "
 
+根据我的需求，怎么设计前后端交互的 API？设计完后，后端wrapper该怎么写websocket
+
 我采用 vue+ts+scss+vite+pinia+vue_router+web_socket 的前端UI的开发方案，不使用第三方的基础组件库。
 
 请你读懂我的需求，并评论，但不需要给出具体的代码
@@ -318,4 +320,5 @@ workflow_mode = WorkflowMode.Record # 枚举类 WorkflowMode 有成员 WalkThrou
 
 我的后端 wrapper.py 管理 5 个子任务 scriptor,song_recognition,ui_recognition,fetch,workflow的启动停止，与此同时与前端通过websocket保持通信。
 wrapper需要通过多进程去运行 5 个子任务，且启动前向个子任务传入一个字典"{module_name}_config"。
-wrapper在于前端通信时，可能收到前端修改某个运行中的子任务的config的请求（如API"/api/module_name/update_config"，传输“{module_name}_config"中的部分
+wrapper在于前端通信时，可能收到前端修改某个运行中的子任务的config的请求（如API"/api/module_name/update_config"，传过来的是“{module_name}_config"中的部分，这时候wrapper需要与子任务进行进程通信，修改对应配置
+现在请为我介绍python的多进程编程+websocket技术，使我能完成上述需求

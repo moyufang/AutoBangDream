@@ -138,14 +138,17 @@ class RunConfig():
       "is_allow_save"      :True,
     }
 
-class ScriptorConfig(CustomPerformance, NoteSkewer, RunConfig):
+from module_config.config_manager import *
+
+# @config_register('scriptor', SCRIPTOR_CONFIG_PATH)
+class ScriptorConfig(Config, CustomPerformance, NoteSkewer, RunConfig):
   """
   在 scriptor.py 中，ScriptorConfig 中有部分属性需要set函数来维持一致性
   set_weights_map, add_weights, del_weights, set_level_ladder,
   set_bias,set_weights, set_performance
   """
-  def __init__(self, *arg):
-    self.set_config(*arg)
+  def __init__(self, config_path:str):
+    Config.__init__(self, config_path)
   def set_config(
       self,
       mode:Mode = None,
@@ -163,8 +166,12 @@ class ScriptorConfig(CustomPerformance, NoteSkewer, RunConfig):
     CustomPerformance.__init__(self)
     NoteSkewer.__init__(self, performance=performance if performance is not None else Performance.AllPerfect)
     RunConfig.__init__(self)
-  def save(self, config_path:str):
-    cfg = {
+  def get_is_fix(self)->bool:
+    return self.mode in [Mode.Free,Mode.Stage] or (self.mode == Mode.Event and self.event in [Event.Challenge, Event.Tour])
+  def get_is_multiplayer(self):
+    return self.mode == Mode.Collaborate or (self.mode == Mode.Event and self.event in [Event.Compete, Event.Team, Event.Mission, Event.Trial])
+  def save(self):
+    self.cfg = {
       'mode': self.mode,
       'event': self.event,
       'choose': self.choose,
@@ -177,12 +184,9 @@ class ScriptorConfig(CustomPerformance, NoteSkewer, RunConfig):
       'weights': self.ori_weights,
       'run_config': self.run_config,
     }
-    with open(config_path, "w", encoding='utf-8') as file:
-      enum_dump(cfg, file)
-  def load(self, config_path:str):
-    with open(config_path, "r", encoding='utf-8') as file:
-      cfg = enum_load(file)
-    for (k,v) in cfg.items():
-      self.__setattr__(k, v)
-        
-        
+    Config.save(self)
+    del self.cfg
+  def load(self):
+    Config.load(self)
+    for (k,v) in self.cfg.items(): self.__setattr__(k, v)
+    del self.cfg

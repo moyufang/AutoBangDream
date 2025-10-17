@@ -123,7 +123,7 @@ def fetch_lack():
       rp, data = get_rp(Mode.FetchLack, url, file_path, is_breif=True)
 
 
-if __name__ == '__main__':
+def start():
   mode = Mode.FetchLack
   if mode == Mode.FetchSheetsHeader:
     fetch_sheets_header()
@@ -135,4 +135,6 @@ if __name__ == '__main__':
     fetch_one(306, 4)
   elif mode == Mode.FetchLack:
     fetch_lack()
+if __name__ == '__main__':
+  start()
         

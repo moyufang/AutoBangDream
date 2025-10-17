@@ -71,7 +71,7 @@ class ImgsDataset(Dataset):
   def __getitem__(self, idx):
     return self.datasets[idx], self.labels[idx]
 
-def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
+def train_epoches(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
   learn_rate = 0.05
   momentum = 0.8
 
@@ -92,7 +92,7 @@ def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
     #if epoch >= 5 and train_losses[epoch-1]/(train_losses[epoch-2]) >= 0.99:
     #	SGD.param_groups[0]['lr'] *= 0.1
     if (epoch+1) % 5 == 0:
-      th.save(nnw, model_path)
+      th.save(nnw, UI_RECOGNITION_MODEL_PATH)
       #SGD.param_groups[0]['lr'] *= 0.1
     start_time = time.time()
     for img, label in loader:
@@ -121,59 +121,60 @@ def train(nnw, dataset:ImgsDataset, loader, epoches=20, up_labels:list=[]):
 
     LogI("epoch %2d train_loss:%lf train_acc:%lf epoch_time:%.3lf"%(epoch, train_loss, train_acc, epoch_time))
 
-  th.save(nnw, model_path)
+  th.save(nnw, UI_RECOGNITION_MODEL_PATH)
 
 #============ train configuration ============#
 
-Net = BangUiNet
-model_name = "BangUINet"
-batch_size = 128
-epoches = 20
-up_labels = ['award', 'award_again', 'award_level', 'ready', 'ready_done'] 
-is_load_model = True
+def train():
+  Net = BangUiNet
+  model_name = "BangUINet"
+  batch_size = 128
+  epoches = 60
+  up_labels = ['award', 'award_again', 'award_level', 'ready', 'ready_done'] 
+  is_load_model = True
 
-#============ train ============#
- 
-dataset = ImgsDataset()
-batch_size = get_batch_size(batch_size, len(dataset))
-LogD(f"batch_size:{batch_size}")
-loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-model_path = './UI_recognition/'+model_name+".pth"
-nnw = Net(dataset.classes_num)
-
-if not is_load_model:
-  nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
-else:
-  nnw = th.load(model_path, weights_only=False)
+  #============ train ============#
   
-nnw = nnw.to(device)
+  dataset = ImgsDataset()
+  batch_size = get_batch_size(batch_size, len(dataset))
+  LogD(f"batch_size:{batch_size}")
+  loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-n = dataset.datasets.size(0)
-weight_acum = dataset.weight.copy()
-weight_acum = [0]+weight_acum
-for i in range(1, len(weight_acum)):
-	weight_acum[i] += weight_acum[i-1]
-LogD(f"weight:{dataset.weight}")
-LogD(f"weight_acum:{weight_acum}")
+  nnw = Net(dataset.classes_num)
 
-train(nnw, dataset, loader, epoches, up_labels)
+  if not is_load_model:
+    nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
+  else:
+    nnw = th.load(UI_RECOGNITION_MODEL_PATH, weights_only=False)
+    
+  nnw = nnw.to(device)
 
-def get_label(img):
-	global nnw
-	out = nnw(img.unsqueeze(0).to(device))
-	_, pred = out.max(1)
-	return pred.item(), dataset.label2str[pred.item()]
+  n = dataset.datasets.size(0)
+  weight_acum = dataset.weight.copy()
+  weight_acum = [0]+weight_acum
+  for i in range(1, len(weight_acum)):
+    weight_acum[i] += weight_acum[i-1]
+  LogD(f"weight:{dataset.weight}")
+  LogD(f"weight_acum:{weight_acum}")
 
-for i in range(n):
-	nnw.eval()
-	idx = i
+  train_epoches(nnw, dataset, loader, epoches, up_labels)
 
-	pid = bisect.bisect_left(weight_acum, i+1)
+  def get_label(img):
+    out = nnw(img.unsqueeze(0).to(device))
+    _, pred = out.max(1)
+    return pred.item(), dataset.label2str[pred.item()]
 
-	img, label = dataset[idx]
-	pred_label, pred_str = get_label(img)
-	if pred_label != label:
-		LogD("pred:(%d %s) label:(%d %s-%d)"%(
-			pred_label, pred_str, label, dataset.label2str[label], i-weight_acum[pid-1]))
+  for i in range(n):
+    nnw.eval()
+    idx = i
 
+    pid = bisect.bisect_left(weight_acum, i+1)
+
+    img, label = dataset[idx]
+    pred_label, pred_str = get_label(img)
+    if pred_label != label:
+      LogD("pred:(%d %s) label:(%d %s-%d)"%(
+        pred_label, pred_str, label, dataset.label2str[label], i-weight_acum[pid-1]))
+
+if __name__ == '__main__':
+  train()

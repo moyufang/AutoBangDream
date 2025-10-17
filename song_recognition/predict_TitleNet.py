@@ -39,7 +39,7 @@ class SongRecognition:
     
   def get_id_by_full_img(self, full_img):
     # 选歌界面有选择难度的情况，即 FIX 的情况
-    is_fix = self.uc.mode == Mode.Free or (self.uc.mode == Mode.Event and self.uc.event == Event.Challenge)
+    is_fix = self.uc.get_is_fix()
     x1,y1,x2,y2 = STD_LEVEL_FIX_TITLE_REGION if is_fix else STD_LEVEL_UNFIX_TITLE_REGION
     t_img = cv2.cvtColor(full_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
     # LogD(f"f_img_shape:{full_img.shape} region:{STD_LEVEL_FIX_TITLE_REGION}")

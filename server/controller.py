@@ -104,7 +104,7 @@ class BangcheaterController:
       
       # 启动新进程
       start_cmd = [self.adb_path, "-s", self.device, "shell", f"{remote_path}", f"{commands_path}", "-t"]
-      self.p = subprocess.Popen(start_cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+      self.p = subprocess.Popen(start_cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
       LogI("started new bangcheater process")
       
       # 等待启动

@@ -24,8 +24,6 @@ class PlayerInterface(ABC):
   @abstractmethod
   def stop_playing(self): pass
   @abstractmethod
-  def restart_bangcheater(self): pass
-  @abstractmethod
   def wait_finish(self, timeout:int)->bool: pass
 
 class WinPlayer(PlayerInterface):
@@ -80,7 +78,9 @@ class WinPlayer(PlayerInterface):
       img = self.extractor.grab()
       tim = self.extractor.get_grab_time() - start_time
       derive_img, t_s, is_edge = self.extractor.extract(img, NoteExtractor.DerivePara.NONE)
-      
+      if tim > 60:
+        LogE("failed to start playing")
+        return -1
       # if t_s[0] < 0.0:
       #   print(t_s)
       #   print("save false into opps.")
@@ -106,19 +106,12 @@ class WinPlayer(PlayerInterface):
       # LogS('playing', f"First note info: t_s:{t_s} is_edge:{is_edge} predict_time:{predict_time}")
       return -1
   def stop_playing(self):
-    # 技术成熟了使用这个 self.player.send_cmd("k")
-    self.restart_bangcheater()
+    self.clr.send_cmd("k")
   def wait_finish(self, timeout:int=300):
     try:
       return str(self.recv(timeout)) == "F"
     except socket.timeout:
       return False
-  def restart_bangcheater(self):
-    if self.communication_mode == 'tcp':
-      self.clr.start_bangcheater()
-      self.clr.connect()
-    elif self.communication_mode == 'stdio':
-      self.adb.start_bangcheater()
 
 class FakeServer:
   def __init__(self):
@@ -179,9 +172,6 @@ class FakeServer:
       touch, x, y = int(str_list[1]), int(str_list[2]), int(str_list[3])
       self.player.click(touch, x, y)
       rp = str(ServerResponse.OK)
-    elif str_list[0] == 'r':
-      self.player.restart_bangcheater()
-      rp = str(ServerResponse.OK)
     elif str_list[0] == 'k':
       self.player.stop_playing()
       rp = str(ServerResponse.OK)
@@ -236,9 +226,6 @@ class ClientPlayer:
     return self.get_int_rp()
   def wait_finish(self, timeout:int):
     self.client.send(f"w {timeout}".encode('utf-8'))
-    return self.get_int_rp()
-  def restart_bangcheater(self):
-    self.client.send(f"r")
     return self.get_int_rp()
   # Used to debug
   def parse_cmd(self, cmd):

@@ -15,13 +15,13 @@ from client.sheet2commands import sheet2commands
 
 #============ User Configuration ============#
 
-user_config = ScriptorConfig()
+user_config = ScriptorConfig(SCRIPTOR_CONFIG_PATH)
 user_config.set_config(
-  Mode.Event,
+  Mode.Stage,
   Event.Compete,
   Choose.Loop,
   Diff.Expert,
-  Performance.FullCombo,
+  Performance.AllPerfect,
   {},
 )
 uc = user_config
@@ -48,7 +48,6 @@ MAX_RE_READY       = 5
 is_allow_save       = True
 
 protected_state    = ['join_wait', 'ready_done']
-special_state_list = ['ready']
 
 log_imgs_path       = LOG_IMGS_PATH
 sheets_path         = SHEETS_PATH
@@ -144,12 +143,13 @@ if is_play_one_song:
 
 # 循环时的临时变量
 frame_id           = 0
+false_img_id       = 0
 same_state_count   = 1
 is_ready           = False
 ready_count        = 0
 special_state_dict = {}
-last_state          = None
-song_duration       = 140
+last_state         = None
+song_duration      = 140
 
 LogI("Cycle start ...")
 while True:
@@ -183,28 +183,32 @@ while True:
   else: print('.', end=''); is_repeat = True
   
   # 重复状态处理逻辑，当重复次数大于阈值时，保存截图
-  if is_repeat:
-    same_state_count += 1
-    if same_state_count > MAX_SAME_STATE:
-      false_img_path = log_imgs_path+f'false_{state}.png'
-      cv.imwrite(false_img_path, img)
-      LogE(f"The state \"{state}\" occur to much, saving img to \"{false_img_path}\"")
-      if state not in protected_state: break
+  if state == last_state:
+    if is_repeat:
+      same_state_count += 1
+      if same_state_count > MAX_SAME_STATE:
+        same_state_count = 0
+        false_img_path = log_imgs_path+f'false-%03d-{state}.png'%false_img_id
+        false_img_id += 1
+        cv.imwrite(false_img_path, img)
+        LogE(f"The state \"{state}\" occur too much, saving img to \"{false_img_path}\"")
+        if state not in protected_state: break
   else: last_state = state; same_state_count = 1
   
-  # 特殊图保存
-  if state in special_state_list:
-    if state not in special_state_dict: special_state_dict[state] = 0
-    img_path = log_imgs_path+f"{state}-%03d.png"%special_state_dict[state]
-    special_state_dict[state] += 1
-    cv.imwrite(img_path, f_img)
-    LogI(f"get state {state}, save img to \"%s\""%img_path)
-  
+  if user_config.get_is_multiplayer():
+    # 准备界面后，不应该出现错误识别
+    if is_ready and state not in ['ready_done', 'playing', 'loading']:
+      false_img_path = log_imgs_path+f'false-%03d-{state}.png'%false_img_id
+      false_img_id += 1
+      cv.imwrite(false_img_path, img)
+      LogE(f"Unexpected state {state} after 'ready', saveing img to \"{false_img_path}\"")
+    # 如果重复次数太多，有问题
+    if is_ready and state == 'ready':
+      if ready_count < MAX_RE_READY: ready_count += 1; state = 'loading'
+      else: ready_count = 0
+    
   # 根据状态，执行操作
   if is_no_action: state = 'loading' # 不执行任何操作
-  if state == 'ready' and is_ready: 
-    if ready_count < MAX_RE_READY: ready_count += 1; state = 'loading'
-    else: ready_count = 0
   if state == 'ready':
     song_id, song_name, similarity, song_safe = song_recognition.get_id_by_full_img(img)
     LogS('ready', f'Recognition song: id:{song_id} name:{song_name} similarity:{similarity}')
@@ -229,6 +233,7 @@ while True:
       img_path = log_imgs_path+"unknown_song.png"
       cv.imwrite(img_path, img)
       LogE(f'Unknown song, save img to "{img_path}"')
+      time.sleep(CYCLE_GAP)
       continue
     
     song_duration = create_and_push_commands(song_id, user_config)
