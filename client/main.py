@@ -32,7 +32,7 @@ uc.set_weights(uc.weights_map['master'])
 dilation_time       =  1000000
 correction_time     = -  40000
 
-is_no_action        = False
+is_no_action        = True
 is_caliboration     = False
 
 play_one_song_id    = 316

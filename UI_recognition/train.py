@@ -131,11 +131,13 @@ def train():
   batch_size = 128
   epoches = 60
   up_labels = ['award', 'award_again', 'award_level', 'ready', 'ready_done'] 
+  dropout_rate = 0.2
   is_load_model = True
 
   #============ train ============#
   
   dataset = ImgsDataset()
+  num_classes = dataset.classes_num
   batch_size = get_batch_size(batch_size, len(dataset))
   LogD(f"batch_size:{batch_size}")
   loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -143,9 +145,12 @@ def train():
   nnw = Net(dataset.classes_num)
 
   if not is_load_model:
-    nnw = Net(num_classes = dataset.classes_num, keep_rate=0.2)
+    nnw = Net(num_classes = dataset.classes_num, dropout_rate=dropout_rate)
   else:
     nnw = th.load(UI_RECOGNITION_MODEL_PATH, weights_only=False)
+    if nnw.num_classes != num_classes:
+      nnw.change_num_classes(num_classes)
+      
     
   nnw = nnw.to(device)
 
