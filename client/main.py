@@ -6,6 +6,7 @@ from module_config.scriptor_config import *
 from utils.json_refiner import refine
 from utils.log import LogE, LogD, LogI, LogS
 from server.ADB import push_file
+from server.controller import BangcheaterController
 from server.player import WinPlayer
 from UI_recognition.predict import UIRecognition
 from song_recognition.predict_TitleNet import SongRecognition
@@ -20,7 +21,7 @@ user_config.set_config(
   Event.Compete,
   Choose.Loop,
   Diff.Expert,
-  Performance.Custom,
+  Performance.FullCombo,
   {},
 )
 uc = user_config
@@ -65,8 +66,9 @@ if True:
     is_load_library=True,
     user_config=user_config
   )
-
-  player = WinPlayer('tcp', init_scale=1)
+  bcc = BangcheaterController()
+  bcc.start_bangcheater()
+  player = WinPlayer('tcp', init_scale=1, remote_port=bcc.remote_port)
   script = Script(player, user_config)
   player.set_caliboration_parameters(dilation_time, correction_time)
   grabber = player.full_grabber
@@ -77,7 +79,7 @@ if True:
     return np.transpose(cv.cvtColor(img, cv.COLOR_BGR2RGB), (2, 0, 1))
 
   def create_and_push_commands(song_id:int, user_config:ScriptorConfig):
-    sheet_name = f'{song_id}_{user_config.diff}.bestdori'
+    sheet_name = f'{song_id}_{int(user_config.diff)}.bestdori'
     if not os.path.exists(sheets_path+sheet_name):
       if user_config.diff == Diff.Special:
         LogI(f"Song {song_id} has not diff \"Special\", using \"Expert\"")

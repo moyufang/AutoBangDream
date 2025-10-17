@@ -2,7 +2,7 @@ import time
 import socket
 import numpy as np
 from abc import ABC, abstractmethod
-from server.controller import LowLatencyController
+from server.controller import Controller
 from server.ADB import ADB
 from utils.WinGrabber import *
 from utils.log import LogE, LogD, LogI, LogS
@@ -29,7 +29,7 @@ class PlayerInterface(ABC):
   def wait_finish(self, timeout:int)->bool: pass
 
 class WinPlayer(PlayerInterface):
-  def __init__(self, communication_mode:str='tcp', init_scale=1):
+  def __init__(self, communication_mode:str='tcp', init_scale=1, remote_port=BANGCHEATER_PORT):
     SCALE = init_scale
 
     self.track_grabber = MumuGrabber('Mumu安卓设备', SCALE, None, [STD_WINDOW_WIDTH, STD_WINDOW_HEIGHT], [TRACK_B_X1, TRACK_T_Y, TRACK_B_X2, TRACK_B_Y])
@@ -43,12 +43,8 @@ class WinPlayer(PlayerInterface):
       self.send_cmd = lambda cmd: self.adb.write(cmd+'\n')
       self.recv = lambda timeout: self.adb.read()
     elif self.communication_mode == 'tcp':
-      self.clr = LowLatencyController(
-        adb_path="adb",
-        device=f"127.0.0.1:{MUMU_PORT}",
-        remote_port=BANGCHEATER_PORT
-      )
-      self.restart_bangcheater()
+      self.clr = Controller(remote_port)
+      self.clr.connect()
       self.send_cmd = lambda cmd: self.clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
       self.recv = lambda *arg: self.clr.recv(arg)
     else:

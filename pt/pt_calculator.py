@@ -28,14 +28,6 @@ class Team:
 		self.high_score = high_score
 		self.shift_pt = shift_pt
 
-class Event(Enum):
-	Mission = auto()
-	Trial = auto()
-	Challenge = auto()
-	Compete = auto()
-	Team = auto()
-	Tour = auto()
-
 def pt_to_score(event:Event, target_pt:int, team_list:list):
 	if (target_pt > MAX_TARGET_PT): raise Error(ErrorID.TargetPtTooLarge)
 
@@ -46,7 +38,7 @@ def pt_to_score(event:Event, target_pt:int, team_list:list):
 	elif (event == Event.Challenge):
 		base_pt = 70; score_factor = 50000
 	elif (event == Event.Compete):
-		base_pt = 123; score_factor = 6500
+		base_pt = 100; score_factor = 6500
 	elif (event == Event.Team):
 		base_pt = 0+105+50; score_factor = 6500
 	elif (event == Event.Tour):
@@ -94,7 +86,7 @@ def pt_to_score(event:Event, target_pt:int, team_list:list):
 		if tpt != 0: raise AssertionError("Path False with no targed pt.")
 		return pt_path
 	else:
-		return [(target_pt-base_pt)*score_factor, (target_pt-base_pt)*(score_factor+1)-1]
+		return [(target_pt-base_pt)*score_factor, (target_pt-base_pt+1)*(score_factor)-1]
 
 """
 本控分器的基本原理是:
@@ -207,14 +199,14 @@ Event.Tour			  #组曲Live
 """
 
 pt_path = pt_to_score(
-	event=Event.Trial, #活动类型
-	target_pt=950,
+	event=Event.Compete, #活动类型
+	target_pt=235,
 	team_list=[	
 		#配队加成%、全漏技能键的单次演出能打到的最高分(近似即可)、副队pt(副队综合力 // 3000)
 		#Team(350, 1600000, 85),
 		#Team(100, 1000000, 296742//3000)
 		#Team(300, 1000000, 85)
-		Team(252, 1800000, 0),
+		Team(107, 2000000, 0),
 	]
 )
 if pt_path == None:

@@ -313,3 +313,9 @@ workflow_mode = WorkflowMode.Record # 枚举类 WorkflowMode 有成员 WalkThrou
 我采用 vue+ts+scss+vite+pinia+vue_router+web_socket 的前端UI的开发方案，不使用第三方的基础组件库。
 
 请你读懂我的需求，并评论，但不需要给出具体的代码
+
+----------------------------------------------------------
+
+我的后端 wrapper.py 管理 5 个子任务 scriptor,song_recognition,ui_recognition,fetch,workflow的启动停止，与此同时与前端通过websocket保持通信。
+wrapper需要通过多进程去运行 5 个子任务，且启动前向个子任务传入一个字典"{module_name}_config"。
+wrapper在于前端通信时，可能收到前端修改某个运行中的子任务的config的请求（如API"/api/module_name/update_config"，传输“{module_name}_config"中的部分

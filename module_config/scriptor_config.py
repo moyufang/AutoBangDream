@@ -1,4 +1,5 @@
 from configuration import *
+from utils.EnumRegistry import *
 import json 
 
 class CustomPerformance:
@@ -10,8 +11,8 @@ class CustomPerformance:
       'fool':     [0.700, 0.200, 0.050, 0.030, 0.020],
       'newbee':   [0.850, 0.095, 0.005, 0.015, 0.035],
       'skilled':  [0.940, 0.050, 0.002, 0.003, 0.005],
-      'master':   [0.960, 0.035, 0.001, 0.001, 0.003],
-      'top':      [0.980, 0.017, 0.001, 0.001, 0.001],
+      'master':   [0.960, 0.038, 0.000, 0.001, 0.001],
+      'top':      [0.980, 0.018, 0.000, 0.001, 0.001],
       'nohuman':  [0.990, 0.008, 0.000, 0.001, 0.001],
       'newworld': [0.995, 0.004, 0.000, 0.000, 0.001],
       'god':      [0.100, 0.000, 0.000, 0.000, 0.000],
@@ -164,11 +165,11 @@ class ScriptorConfig(CustomPerformance, NoteSkewer, RunConfig):
     RunConfig.__init__(self)
   def save(self, config_path:str):
     cfg = {
-      'mode': f'Mode.{self.mode.name}',
-      'event': f'Event.{self.event.name}',
-      'choose': f'Choose.{self.choose.name}',
-      'diff': f'Diff.{self.diff.name}',
-      'performance': f'Performance.{self.performance.name}',
+      'mode': self.mode,
+      'event': self.event,
+      'choose': self.choose,
+      'diff': self.diff,
+      'performance': self.performance,
       'event_config': self.event_config,
       'bias': self.bias,
       'weights_map': self.weights_map,
@@ -177,13 +178,11 @@ class ScriptorConfig(CustomPerformance, NoteSkewer, RunConfig):
       'run_config': self.run_config,
     }
     with open(config_path, "w", encoding='utf-8') as file:
-      json.dump(cfg, file)
+      enum_dump(cfg, file)
   def load(self, config_path:str):
     with open(config_path, "r", encoding='utf-8') as file:
-      cfg = json.load(file)
+      cfg = enum_load(file)
     for (k,v) in cfg.items():
-      if k in ['mode', 'event', 'diff', 'performance']:
-        e,v = v.split('.')
-        self.__setattr__(k, str2enum[e][v])
-      else:
-        self.__setattr__(k, v)
+      self.__setattr__(k, v)
+        
+        

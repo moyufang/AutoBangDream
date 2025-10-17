@@ -56,6 +56,7 @@ logger = setup_logging(
 LogE = logger.error
 LogD = logger.debug
 LogI = logger.info
+LogW = logger.warning
 
 state_logger = setup_logging(
   name='state_logger',

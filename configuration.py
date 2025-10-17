@@ -3,6 +3,7 @@ import json
 import os
 import numpy as np
 from numpy import random as rd
+from utils.EnumRegistry import *
 
 # 端口
 MUMU_PORT = 7555
@@ -37,7 +38,11 @@ FETCH_CONFIG_PATH            = './module_config/fetch_config.json'
 WORKFLOW_CONFIG_PATH         = './module_config/workflow_config.json'
 PT_CALCULATOR_CONFIG_PATH    = './module_config/pt_calculator_config.json'
 
+REMOTE_BANGCHEATER_PATH      = '/data/local/tmp/bangcheater'
+REMOTE_COMMANDS_PATH         = '/data/local/tmp/commands.sheet'
+
 # 演出模式
+@enum_register
 class Mode(Enum):
   Free           = auto() # 自由演出
   Collaborate    = auto() # 协力演出
@@ -51,6 +56,7 @@ class Mode(Enum):
   Story          = auto() # 阅读故事
 
 # 活动种类
+@enum_register
 class Event(Enum):
   Mission        = auto() # 任务活动
   Trial          = auto() # 试炼活动
@@ -60,6 +66,7 @@ class Event(Enum):
   Compete        = auto() # 竞演活动
 
 # 选歌模式
+@enum_register
 class Choose(Enum):
   Loop           = auto() # 单曲循环
   Random         = auto() # 随机选曲
@@ -68,6 +75,7 @@ class Choose(Enum):
   No             = auto() # 不指定选曲
 
 # 选曲难度
+@enum_register
 class Diff(IntFlag):
   Easy           = 0
   Normal         = 1
@@ -76,6 +84,7 @@ class Diff(IntFlag):
   Special        = 4      #如果该歌曲不存在 Special 难度，则选择 Expert 难度
   
 # 演出水平
+@enum_register
 class Performance(Enum):
   AllPerfect     = auto() # AP
   FullCombo      = auto() # FC
@@ -83,21 +92,13 @@ class Performance(Enum):
   DropLastCustom = auto() # 自定义，同时 Miss 最后一个键（防 FC）
 
 # 音符判定
+@enum_register
 class Note(Enum):
   Perfect        = auto()
   Great          = auto()
   Good           = auto()
   Bad            = auto()
   Miss           = auto()
-  
-str2enum = {
-  'Mode': Mode,
-  'Event': Event,
-  'Choose': Choose,
-  'Diff': Diff,
-  'Performance': Performance,
-  'Note': Note,
-}
 
 #============ POS ============#
 
