@@ -33,19 +33,18 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
       rc.__setattr__(k, v)
 
 #============ User Configuration ============#
-  refresh()
+  # refresh()
   if is_config_by_code: # 代码里修改配置
     cfg.set_config(
-      Mode.Event,
+      Mode.Free,
       Event.Compete,
-      Choose.Random,
+      Choose.Loop,
       Diff.Expert,
-      Performance.AllPerfect,
+      Performance.Custom,
       'master',
       {"lobby":True,"special_stage":True},
     )
     cfg.set_performance(Performance.Custom if cfg.mode == Mode.Event else Performance.AllPerfect)
-    
     # Run Configuration
 
     rc.correction_time     = -  40000

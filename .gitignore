@@ -14,8 +14,9 @@ song_recognition/feature_vectors.json
 commands.json
 commands.sheet
 
-temp.py
-tmp.py
+temp
+temp.*
+tmp.*
 tempCodeRunnerFile.py
 bangcheater/libs/
 bangcheater/obj/

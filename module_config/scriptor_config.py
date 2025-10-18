@@ -77,7 +77,7 @@ class NoteSkewer:
     
   def set_performance(self, performance:Performance):
     self.performance = performance
-    if hasattr(self, 'ori_weight'): self.create_skewer()
+    if hasattr(self, 'ori_weights'): self.create_skewer()
     
   def set_weights(self, weights:list=None):
     if weights is not None:
@@ -144,8 +144,10 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer):
     self.additional_config = additional_config if additional_config is not None else {}
     self.custom_performance = custom_performance if custom_performance is not None else 'god'
     CustomPerformance.__init__(self)
-    NoteSkewer.__init__(self, performance=performance if performance is not None else Performance.AllPerfect)
-    self.set_weights(self.weights_map[self.custom_performance])
+    NoteSkewer.__init__(self,
+      performance=performance if performance is not None else Performance.AllPerfect,
+      weights=self.weights_map[self.custom_performance]
+    )
 
     self.run_config = {
       "correction_time"    : -  40000,
@@ -207,9 +209,9 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer):
     if 'del_weights' in note:
       for (k,v) in note['del_weights']:
         self.del_weights(k, v)
-    if 'weight_title' in note:
-      if note['weight_title'] in self.weights_map:
-        self.set_weights(self.weights_map[note['weight_title']])
+    if 'custom_performance' in note:
+      if note['custom_performance'] in self.weights_map:
+        self.set_weights(self.weights_map[note['custom_performance']])
     if 'run_config' in note:
       self.run_config.update(note['run_config'])
     self.save()

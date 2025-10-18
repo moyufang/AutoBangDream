@@ -101,7 +101,7 @@
     
   },
   "note": {
-    "weight_title": "newbee",
+    "custom_performance": "newbee",
     "add_weights":{
       "my_title": [0.97, 0.02, 0.00, 0.00, 0.01]
     },

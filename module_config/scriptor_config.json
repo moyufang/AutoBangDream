@@ -1,14 +1,14 @@
 {
-  "mode":"Mode.Event",
+  "mode":"Mode.Free",
   "event":"Event.Compete",
-  "choose":"Choose.Random",
+  "choose":"Choose.Loop",
   "diff":3,
-  "performance":"Performance.Custom",
+  "performance":"Performance.AllPerfect",
   "additional_config":{
     "lobby":true,
     "special_stage":true
   },
-  "custom_performance":"master",
+  "custom_performance":"hell",
   "bias":[
     [-0.0, 0.0],
     [-0.032, 0.032],
