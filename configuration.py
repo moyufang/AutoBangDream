@@ -30,6 +30,8 @@ TITLE_IMGS_PATH              = './song_recognition/title_imgs/'
 FEATURE_VECTORS_PATH         = './song_recognition/feature_vectors.json'
 
 SHEETS_PATH                  = './sheet/sheets/'
+COMMANDS_SHEET_PATH          = './client/commands.sheet'
+COMMANDS_JSON_PATH           = './client/commands.json'
 
 SCRIPTOR_CONFIG_PATH         = './module_config/scriptor_config.json'
 SONG_RECOGNITION_CONFIG_PATH = './module_config/song_recognition_config.json'

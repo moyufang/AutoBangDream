@@ -116,32 +116,10 @@ class NoteSkewer:
   def get_skew(self):
     return float(self._get_skew())
   
-class RunConfig():
-  def __init__(self):
-    self.run_config = {
-      "dilation_time"      :  1000000,
-      "correction_time"    : -  40000,
-
-      "is_no_action"       : False,
-      "is_caliboration"    : False,
-
-      "play_one_song_id"   : 316,
-      "is_play_one_song"   : False,
-      "is_restart_play"    : True,
-
-      "is_checking_3d"     : True,
-
-      "is_repeat"          : True,
-      "MAX_SAME_STATE"     : 100,
-      "MAX_RE_READY"       : 5,
-
-      "is_allow_save"      :True,
-    }
-
 from module_config.config_manager import *
 
 # @config_register('scriptor', SCRIPTOR_CONFIG_PATH)
-class ScriptorConfig(Config, CustomPerformance, NoteSkewer, RunConfig):
+class ScriptorConfig(Config, CustomPerformance, NoteSkewer):
   """
   在 scriptor.py 中，ScriptorConfig 中有部分属性需要set函数来维持一致性
   set_weights_map, add_weights, del_weights, set_level_ladder,
@@ -156,16 +134,43 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer, RunConfig):
       choose:Choose = None,
       diff:Diff = None,
       performance:Performance = None,
-      event_config:dict = None, # 特殊活动特殊考虑
+      custom_performance:str = None,
+      additional_config:dict = None, # 特殊活动特殊模式特殊考虑
     ):
     self.mode = mode if mode is not None else Mode.Free
     self.event = event if event is not None else Event.Mission
     self.choose = choose if choose is not None else Choose.Loop
     self.diff = diff if diff is not None else Diff.Expert
-    self.event_config = event_config if event_config is not None else {}
+    self.additional_config = additional_config if additional_config is not None else {}
+    self.custom_performance = custom_performance if custom_performance is not None else 'god'
     CustomPerformance.__init__(self)
     NoteSkewer.__init__(self, performance=performance if performance is not None else Performance.AllPerfect)
-    RunConfig.__init__(self)
+    self.set_weights(self.weights_map[self.custom_performance])
+
+    self.run_config = {
+      "correction_time"    : -  40000,
+      "target_diff_time"   :    55000,
+      "dilation_time"      :  1000000,
+
+      "is_no_action"       : False,
+      "is_caliboration"    : False,
+
+      "play_one_song_id"   : 316,
+      "is_play_one_song"   : False,
+      "is_restart_play"    : True,
+
+      "is_checking_3d"     : True,
+
+      "MAX_SAME_STATE"     : 100,
+      "MAX_RE_READY"       : 5,
+
+      "is_allow_save"      : True,
+      "is_allow_suspend"   : True,
+      
+      "protected_state"    : ['join_wait', 'ready_done'], 
+      "record_state"       : ['award'],
+    }
+    
   def get_is_fix(self)->bool:
     return self.mode in [Mode.Free,Mode.Stage] or (self.mode == Mode.Event and self.event in [Event.Challenge, Event.Tour])
   def get_is_multiplayer(self):
@@ -177,11 +182,11 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer, RunConfig):
       'choose': self.choose,
       'diff': self.diff,
       'performance': self.performance,
-      'event_config': self.event_config,
+      'additional_config': self.additional_config,
+      'custom_performance': self.custom_performance,
       'bias': self.bias,
       'weights_map': self.weights_map,
       'level_ladder': self.level_ladder,
-      'weights': self.ori_weights,
       'run_config': self.run_config,
     }
     Config.save(self)
@@ -190,3 +195,29 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer, RunConfig):
     Config.load(self)
     for (k,v) in self.cfg.items(): self.__setattr__(k, v)
     del self.cfg
+    self.set_weights(self.weights_map[self.custom_performance])
+  def update(self, new_cfg:dict, note:dict={}):
+    for k,v in new_cfg.items():
+      if hasattr(self, k):
+        self.__setattr__(k, v)
+    if 'add_weights' in note:
+      for (k,v) in note['add_weights']:
+        try: self.add_weights(k, v)
+        except Exception: pass
+    if 'del_weights' in note:
+      for (k,v) in note['del_weights']:
+        self.del_weights(k, v)
+    if 'weight_title' in note:
+      if note['weight_title'] in self.weights_map:
+        self.set_weights(self.weights_map[note['weight_title']])
+    if 'run_config' in note:
+      self.run_config.update(note['run_config'])
+    self.save()
+    
+if __name__ == '__main__':
+  scfg = ScriptorConfig(SCRIPTOR_CONFIG_PATH)
+  scfg.set_config()
+  scfg.save()
+  
+  from utils.json_refiner import refine
+  refine(scfg.config_path, max_depth=[2, 2, 0])

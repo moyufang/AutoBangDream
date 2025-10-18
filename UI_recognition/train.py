@@ -130,7 +130,7 @@ def train():
   model_name = "BangUINet"
   batch_size = 128
   epoches = 60
-  up_labels = ['award', 'award_again', 'award_level', 'ready', 'ready_done'] 
+  up_labels = ['award', 'award_again', 'award_loading', 'ready', 'ready_done'] 
   dropout_rate = 0.2
   is_load_model = True
 

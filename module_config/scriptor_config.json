@@ -1,0 +1,60 @@
+{
+  "mode":"Mode.Event",
+  "event":"Event.Compete",
+  "choose":"Choose.Random",
+  "diff":3,
+  "performance":"Performance.Custom",
+  "additional_config":{
+    "lobby":true,
+    "special_stage":true
+  },
+  "custom_performance":"master",
+  "bias":[
+    [-0.0, 0.0],
+    [-0.032, 0.032],
+    [-0.048, 0.048],
+    [-0.064, 0.064],
+    [-1.0, 1.0]
+  ],
+  "weights_map":{
+    "blind":[0.45, 0.3, 0.05, 0.05, 0.15],
+    "hell":[0.6, 0.2, 0.05, 0.05, 0.1],
+    "fool":[0.7, 0.2, 0.05, 0.03, 0.02],
+    "newbee":[0.85, 0.095, 0.005, 0.015, 0.035],
+    "skilled":[0.94, 0.05, 0.002, 0.003, 0.005],
+    "master":[0.96, 0.038, 0.0, 0.001, 0.001],
+    "top":[0.98, 0.018, 0.0, 0.001, 0.001],
+    "nohuman":[0.99, 0.008, 0.0, 0.001, 0.001],
+    "newworld":[0.995, 0.004, 0.0, 0.0, 0.001],
+    "god":[0.1, 0.0, 0.0, 0.0, 0.0]
+  },
+  "level_ladder":[
+    ["blind", 32],
+    ["hell", 30],
+    ["fool", 29],
+    ["newbee", 28],
+    ["skilled", 27],
+    ["master", 26],
+    ["top", 25],
+    ["nohuman", 23],
+    ["newworld", 18],
+    ["god", 0]
+  ],
+  "run_config":{
+    "correction_time":-40000,
+    "target_diff_time":55000,
+    "dilation_time":1000000,
+    "is_no_action":false,
+    "is_caliboration":false,
+    "play_one_song_id":316,
+    "is_play_one_song":false,
+    "is_restart_play":true,
+    "is_checking_3d":true,
+    "MAX_SAME_STATE":100,
+    "MAX_RE_READY":5,
+    "is_allow_save":true,
+    "is_allow_suspend":true,
+    "protected_state":["join_wait", "ready_done"],
+    "record_state":["award"]
+  }
+}

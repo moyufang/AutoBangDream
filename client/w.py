@@ -3,25 +3,21 @@ import threading
 import asyncio
 import websockets as ws
 import multiprocessing as mp
+from multiprocessing import Process, Queue
 from configuration import *
+from module_config.scriptor_config import ScriptorConfig
 from utils.log import LogE, LogD, LogI, LogS
-from server.controller import BangcheaterController, Controller
-from server.player import WinPlayer
+from server.controller import BangcheaterController
 
 #============ module ============#
 
-import asyncio
-import websockets
-import json
-from multiprocessing import Process, Queue
-
 from client.scriptor                import start as scriptor_start
-from song_recognition.grabber       import start as add_song_start
-from song_recognition.train_triplet import train as sr_train_start
-from UI_recognition.add_img         import start as add_img_start
-from UI_recognition.train           import train as ur_train_start
-from sheet.fetch                    import start as fetch_start
-from client.workflow                import start as workflow_start
+# from song_recognition.grabber       import start as add_song_start
+# from song_recognition.train_triplet import train as sr_train_start
+# from UI_recognition.add_img         import start as add_img_start
+# from UI_recognition.train           import train as ur_train_start
+# from sheet.fetch                    import start as fetch_start
+# from client.workflow                import start as workflow_start
 
 class LockManager:
   def __init__(self):
@@ -42,69 +38,78 @@ class LockManager:
     if lock not in self.locks: raise ValueError("Unknown lock")
     self.locks[lock]['avail'] = True
     self.locks[lock]['holder'] = ''
+
+class ModuleManager:
+  def __init__(self):
+    self.l = LockManager()
+    self.l.create_lock('player')
+    self.q = Queue()
+    # 存储每个模块的进程和队列
+    self.m = {
+      'scriptor': {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F': scriptor_start, 'L':'player', 'C': ScriptorConfig(SCRIPTOR_CONFIG_PATH)},
+      # 'add_song': {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F': add_song_start, 'L':'player'},
+      # 'sr_train': {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F': sr_train_start, 'L':None},
+      # 'add_img' : {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F':  add_img_start, 'L':None},
+      # 'ur_train': {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F': ur_train_start, 'L':None},
+      # 'fetch'   : {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F':    fetch_start, 'L':None},
+      # 'workflow': {'P': None, 'Q': Queue(), 'logQ': Queue(), 'F': workflow_start, 'L':'player'}
+    }
+
+  def is_running(self, module_name):
+    return self.m[module_name]['P'] is not None and self.m[module_name]['P'].is_alive()
+
+  def start_module(self, module_name)->tuple[bool, str]:
+    if self.is_running(module_name): return False, ''
+    mod = self.m[module_name]
+    if mod['L']: avail, holder = self.l.acquire(mod['L'])
+    if avail:
+      mod['P'] = Process(target=self.m[module_name]['F'], args=(self.q, mod['Q'], mod['logQ']))
+      mod['P'].daemon = True
+      mod['P'].start()
+    return avail, holder
+
+  def stop_module(self, module_name):
+    if not self.is_running(module_name): return False
+    mod = self.m[module_name]
+    mod['Q'].put({'command': 'stop'})
+    mod['P'].join(timeout=1)
+    if mod['P'].is_alive():
+      mod['P'].terminate()
+      mod['P'].join()
+      mod['P'] = None
+    if mod['L']: self.l.release(mod['L'])
     
-# 存储每个模块的进程和队列
-modules = {
-  'scriptor': {'process': None, 'queue': Queue(), 'start': scriptor_start, 'require_lock':'player'},
-  'add_song': {'process': None, 'queue': Queue(), 'start': add_song_start, 'require_lock':'player'},
-  'sr_train': {'process': None, 'queue': Queue(), 'start': sr_train_start},
-  'add_img' : {'process': None, 'queue': Queue(), 'start':  add_img_start},
-  'ur_train': {'process': None, 'queue': Queue(), 'start': ur_train_start},
-  'fetch'   : {'process': None, 'queue': Queue(), 'start':    fetch_start},
-  'workflow': {'process': None, 'queue': Queue(), 'start': workflow_start, 'require_lock':'player'}
-}
-
-def start_module(module_name, initial_config):
-  queue = modules[module_name]['queue']
-  process = Process(target=modules[module_name]['start'], args=(initial_config, queue))
-  process.start()
-  modules[module_name]['process'] = process
+  def update_module_config(self, module_name:str, new_config:dict, note:dict={}):
+    self.m[module_name]['C'].update(new_config, note)
+    if self.is_running(module_name):
+      mod = self.m[module_name]
+      mod['Q'].put({'command': 'refresh_config'})
   
-def stop_module(module_name):
-  process = modules[module_name]['process']
-  if process and process.is_alive():
-    process.terminate()
-    process.join()
+  def get_module_status(self, module_name):
+    if not self.is_running(module_name): return {'is_running':False}
+    mod = self.m[module_name]
+    data = {'command': 'get_status'}
+    mod['Q'].put(data)
+    status = {'is_running':True}
+    try: status.update(self.q.get(timeout=2))
+    except Exception as e:pass
+    return status
+  
+  def parse(self, data:dict):
+    pass
 
-# 处理WebSocket消息
-async def handler(websocket, path):
-  async for message in websocket:
-    try:
-      data = json.loads(message)
-      # 期望消息格式：{"module": "module_name", "config": { ... }}
-      module_name = data.get('module')
-      new_config = data.get('config')
-      if module_name in modules:
-        # 将配置更新放入对应模块的队列
-        modules[module_name]['queue'].put(new_config)
-        await websocket.send(f"Config update for {module_name} sent.")
-      else:
-        await websocket.send(f"Unknown module: {module_name}")
-    except Exception as e:
-      await websocket.send(f"Error: {str(e)}")
+if __name__ == '__main__':
+  mm = ModuleManager()
 
-# 启动WebSocket服务器
-async def start_websocket_server():
-  async with websockets.serve(handler, "localhost", WARPER_PORT):
-    await asyncio.Future()  # 永远运行
+  mumu_port = 7555
+  server_port = 31415
+  bangcheater_port = 12345
 
-if __name__ == "__main__":
-  # 启动所有子任务
+  bcc = BangcheaterController("adb", f"127.0.0.1:{MUMU_PORT}", BANGCHEATER_PORT)
+  bcc.start_bangcheater()
 
-  # 启动WebSocket服务器
-  asyncio.start(start_websocket_server())
-
-  # 注意：由于asyncio.run会阻塞，这里我们假设在关闭程序时先停止WebSocket服务器，然后停止子任务。
-  # 但实际上，我们需要处理优雅关闭。这里为了简单，先这样写。
-
-#============ Player Configuration ============#
-
-mumu_port = 7555
-server_port = 31415
-bangcheater_port = 12345
-
-bcc = BangcheaterController("adb", f"127.0.0.1:{MUMU_PORT}", BANGCHEATER_PORT)
-bcc.start_bangcheater()
-clr = Controller(bcc.remote_port)
-clr.connect()
-
+  mm.start_module('scriptor')
+  
+  while True:
+    while not mm.q.empty(): mm.parse(mm.q.get())
+    

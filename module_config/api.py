@@ -1,3 +1,19 @@
+#============ ModuleManager -> Module ============#
+
+# 更新配置
+{
+  "command": "refresh",
+}
+
+#获取状态
+{
+  "command": "get_status"
+}
+
+#============ Module -> ModuleManager ============#
+
+
+
 #============ Backend -> Frontend ============#
 
 # 状态更新
@@ -82,14 +98,20 @@
   "type": "update_config",
   "module": "scriptor", 
   "data": {
+    
+  },
+  "note": {
+    "weight_title": "newbee",
     "add_weights":{
       "my_title": [0.97, 0.02, 0.00, 0.00, 0.01]
     },
     "del_weights":{
       "my_title": [0,0,0,0,0]
+    },
+    "run_config":{
+      "dilation_time"      :  1000000,
     }
-  },
-  "note": "update_weights_map"
+  }
 }
 
 # 用户交互响应

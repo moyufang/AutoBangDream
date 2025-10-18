@@ -30,7 +30,6 @@ class Script:
                                 self.click( 640, 520), time.sleep(CLICK_GAP),
                                 self.click( 640, 510),
                                 ),
-      'award_level':   lambda : self.click(1080, 640),
       'award_loading': lambda: True,
       'award_score':   lambda : self.click(1080, 640),
       'choose':        self._choose,
@@ -46,6 +45,7 @@ class Script:
       'failed':        lambda : self.click( 380, 450),
       'failed_again':  lambda : self.click( 780, 450),
       'join':          lambda : self.click(1080, 640) if self.uc.mode == Mode.Collaborate else self.click(  32, 32),
+      'join_choose':   lambda : self._choose(is_join_choose=True),
       'join_loading':  lambda : True,
       'join_wait':     lambda : True,
       'join_exit':     lambda : self.click(  32,  32),
@@ -100,9 +100,9 @@ class Script:
       
     if self.uc.mode == Mode.Stage:
       self.click(210, 390)
-      time.sleep(CLICK_GAP_4*2)
+      time.sleep(CLICK_GAP_4)
       self.click(640, 520)
-      time.sleep(CLICK_GAP_4*2)
+      time.sleep(CLICK_GAP_4)
     
     self.click(1120, 600)
     return True
@@ -117,7 +117,11 @@ class Script:
       elif self.uc.event in [Event.Compete, Event.Team]: self.click(1080, 240)
     return True
   
-  def _choose(self):
+  def _choose(self, is_join_choose:bool=False):
+    if not is_join_choose and self.uc.get_is_multiplayer():
+      self.click(32, 32)
+      return True
+    
     if self.uc.choose == Choose.Loop: pass
     elif self.uc.choose == Choose.ListDown:
       if self.uc.mode == Mode.Stage: self.click(160, 310)

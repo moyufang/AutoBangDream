@@ -44,7 +44,7 @@ class WinPlayer(PlayerInterface):
       self.clr = Controller(remote_port)
       self.clr.connect()
       self.send_cmd = lambda cmd: self.clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
-      self.recv = lambda *arg: self.clr.recv(arg)
+      self.recv = lambda *arg: self.clr.recv(*arg)
     else:
       LogE("Unknown communication mode.")
       exit(1)
@@ -65,6 +65,8 @@ class WinPlayer(PlayerInterface):
   def set_caliboration_parameters(self, dilation_time, correction_time):
     self.dilation_time = dilation_time
     self.correction_time = correction_time
+  def grab_full_img(self):
+    return self.full_grabber.grab()[:,:,:3]
   def start_playing(self, is_caliboration:bool = False):
     
     LogS('playing', "Start detecting 'is_playing'")
@@ -162,7 +164,7 @@ class FakeServer:
       self.player.set_caliboration_parameters(int(str_list[1]), int(str_list[2]))
       rp = str(ServerResponse.OK)
     elif str_list[0] == 'i':
-      img = self.player.full_grabber.grab()[:,:,:3]
+      img = self.player.grab_full_img()
       rp = img.tobytes()
     elif str_list[0] == 'p':
       is_caliboration = bool(str_list[1])
