@@ -21,16 +21,16 @@ class Script:
     self.state2action = {
       'award':         lambda : self.click(1080, 640),
       'award_again':   lambda : self.click( 800, 640),
-      'award_back':    lambda : self.click( 760, 440),
+      'award_back':    lambda : self.click( 760, 440) if not self.uc.get_is_finish() else self.click( 660, 440),
       'award_dialog':  lambda : (
                                 self.click( 640, 640), time.sleep(CLICK_GAP),
-                                self.click( 640, 590), time.sleep(CLICK_GAP),
+                                # self.click( 640, 590), time.sleep(CLICK_GAP),
                                 self.click( 640, 580), time.sleep(CLICK_GAP),
-                                self.click( 640, 560), time.sleep(CLICK_GAP),
+                                # self.click( 640, 560), time.sleep(CLICK_GAP),
                                 self.click( 640, 520), time.sleep(CLICK_GAP),
-                                self.click( 640, 510),
+                                # self.click( 640, 510),
                                 ),
-      'award_loading': lambda: True,
+      'award_loading': lambda : self.click(  30, 360),
       'award_score':   lambda : self.click(1080, 640),
       'choose':        self._choose,
       'choose_dialog': lambda : (
@@ -40,11 +40,11 @@ class Script:
                                 self.click( 876, 430), time.sleep(CLICK_GAP),
                                 self.click( 780, 640)
                                 ),
-      'compete':       lambda : self.click(1080, 640) if self.uc.mode == Mode.Event else self.click(  32, 32),
+      'compete':       lambda : self._join(ty=2),
       'download':      lambda : self.click( 760, 580),
       'failed':        lambda : self.click( 380, 450),
       'failed_again':  lambda : self.click( 780, 450),
-      'join':          lambda : self.click(1080, 640) if self.uc.mode == Mode.Collaborate else self.click(  32, 32),
+      'join':          lambda : self._join(ty=1),
       'join_choose':   lambda : self._choose(is_join_choose=True),
       'join_loading':  lambda : True,
       'join_wait':     lambda : True,
@@ -73,7 +73,6 @@ class Script:
                                 self.click( 580,  60), time.sleep(CLICK_GAP_4),
                                 self.click( 580,  60), 
                                 ),
-      'story':         lambda : self.click(1080, 640),
       'story_choose':  lambda : self.click(1080, 640),
       'story_dialog':  lambda : self.click( 640, 580),
       'story_skip':    lambda : self.click( 770, 450),
@@ -81,7 +80,10 @@ class Script:
                                 self.click( 840, 450),
       'tour_choose':   lambda : self.click(1080, 640),
     }
-
+  def _join(self, ty):
+    if (ty == 1 and self.uc.get_is_collaborate()) or (ty == 2 and self.uc.mode == Mode.Event):
+      if not self.uc.get_is_finish(): self.click(1080, 640)
+    else: self.click(  32, 32),
   def _ready(self):
     if self.uc.mode == Mode.Event and self.uc.event == Event.Tour:
       if self.uc.diff == 4:
@@ -121,6 +123,7 @@ class Script:
     if not is_join_choose and self.uc.get_is_multiplayer():
       self.click(32, 32)
       return True
+    if not is_join_choose and self.uc.get_is_finish(): return False
     
     if self.uc.choose == Choose.Loop: pass
     elif self.uc.choose == Choose.ListDown:

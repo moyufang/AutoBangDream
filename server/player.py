@@ -45,6 +45,9 @@ class WinPlayer(PlayerInterface):
       self.clr.connect()
       self.send_cmd = lambda cmd: self.clr.socket.sendall(cmd.encode() if isinstance(cmd, str) else cmd)
       self.recv = lambda *arg: self.clr.recv(*arg)
+    elif self.communication_mode == 'none':
+      self.send_cmd = lambda : False
+      self.recv = lambda : None
     else:
       LogE("Unknown communication mode.")
       exit(1)

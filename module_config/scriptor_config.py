@@ -10,7 +10,7 @@ class CustomPerformance:
       'hell':     [0.600, 0.200, 0.050, 0.050, 0.100],
       'fool':     [0.700, 0.200, 0.050, 0.030, 0.020],
       'newbee':   [0.850, 0.095, 0.005, 0.015, 0.035],
-      'skilled':  [0.940, 0.050, 0.002, 0.003, 0.005],
+      'skilled':  [0.943, 0.050, 0.002, 0.003, 0.002],
       'master':   [0.960, 0.038, 0.000, 0.001, 0.001],
       'top':      [0.980, 0.018, 0.000, 0.001, 0.001],
       'nohuman':  [0.990, 0.008, 0.000, 0.001, 0.001],
@@ -68,7 +68,7 @@ class CustomPerformance:
 # 关键函数 get_skew 用 _get_skew 实现了多态，便于后续更新策略
 class NoteSkewer:
   def __init__(self,
-               bias=[0.000,0.032,0.048,0.064,1.000],
+               bias=[0.000,0.032,0.040,0.048,1.000],
                weights:list=None,
                performance:Performance=Performance.AllPerfect):
     self.set_bias(bias)
@@ -97,7 +97,7 @@ class NoteSkewer:
     if self.performance == Performance.AllPerfect or weights == None:
       self._get_skew = lambda : 0.0
     else:
-      if self.performance == Performance.FullCombo:
+      if self.performance in [Performance.FullCombo, Performance.DropLastFC]:
         for i in [2,3,4]: weights[i] = 0.0
       for i in range(1, len(weights)): weights[i] += weights[i-1]
       self._get_skew = lambda : rd.choice(self.bias[self.get_note()])
@@ -153,6 +153,9 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer):
       "correction_time"    : -  40000,
       "target_diff_time"   :    55000,
       "dilation_time"      :  1000000,
+      
+      "finish_count"       : 0,
+      "max_finish_count"   : 0,
 
       "is_no_action"       : False,
       "is_caliboration"    : False,
@@ -172,11 +175,14 @@ class ScriptorConfig(Config, CustomPerformance, NoteSkewer):
       "protected_state"    : ['join_wait', 'ready_done'], 
       "record_state"       : ['award'],
     }
-    
+  def get_is_finish(self):
+    return self.run_config['finish_count'] == self.run_config['max_finish_count']
   def get_is_fix(self)->bool:
     return self.mode in [Mode.Free,Mode.Stage] or (self.mode == Mode.Event and self.event in [Event.Challenge, Event.Tour])
   def get_is_multiplayer(self):
     return self.mode == Mode.Collaborate or (self.mode == Mode.Event and self.event in [Event.Compete, Event.Team, Event.Mission, Event.Trial])
+  def get_is_collaborate(self):
+    return self.mode == Mode.Collaborate or (self.mode == Mode.Event and self.event in [Event.Mission, Event.Trial])
   def save(self):
     self.cfg = {
       'mode': self.mode,

@@ -1,1 +1,0 @@
-set PYTHONPATH=d:\AutoGame\AutoBangDream && python -u "d:\AutoGame\AutoBangDream\client\main.py"

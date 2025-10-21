@@ -4,8 +4,7 @@ from enum import Enum, auto
 import json
 import easyocr
 from configuration import *
-from sheet.fetch_sheets import shave_str, special_char
-from server.player import Player
+from sheet.fetch import shave_str, special_char
 from configuration import *
 import torch as th
 

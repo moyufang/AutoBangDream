@@ -36,20 +36,23 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
   # refresh()
   if is_config_by_code: # 代码里修改配置
     cfg.set_config(
-      Mode.Free,
-      Event.Compete,
-      Choose.Loop,
+      Mode.Collaborate,
+      Event.Mission,
+      Choose.No,
       Diff.Expert,
-      Performance.Custom,
+      Performance.FullCombo,
       'master',
       {"lobby":True,"special_stage":True},
     )
-    cfg.set_performance(Performance.Custom if cfg.mode == Mode.Event else Performance.AllPerfect)
+    # cfg.set_performance(Performance.Custom if cfg.mode == Mode.Event else Performance.AllPerfect)
     # Run Configuration
 
     rc.correction_time     = -  40000
     rc.target_diff_time    =    55000
     rc.dilation_time       =  1000000
+    
+    rc.finish_count        = 0
+    rc.max_finish_count    = 8
 
     rc.is_no_action        = False
     rc.is_caliboration     = False
@@ -64,10 +67,10 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
     rc.MAX_RE_READY       = 5
 
     rc.is_allow_save      = True
-    rc.is_allow_suspend   = False
+    rc.is_allow_suspend   = True
 
     rc.protected_state    = ['join_wait', 'ready_done']
-    rc.record_state       = ['award']
+    rc.record_state       = ['ready', 'main_page']
     
     cfg.save()
     from utils.json_refiner import refine
@@ -192,15 +195,6 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
     f_img = cv.resize(img, (STD_WINDOW_WIDTH//8,STD_WINDOW_HEIGHT//8),interpolation=cv.INTER_AREA)
     th_img = to_torch_type(f_img)
     
-    # 暂停任务
-    if rc.is_allow_suspend and keyboard.is_pressed('t'):
-      LogI("Scriptor suspend")
-      while True:
-        time.sleep(0.5)
-        if keyboard.is_pressed('c'):
-          LogI("Scriptor continue")
-          break
-    
     # 检测按键，用于保存截图
     if rc.is_allow_save and keyboard.is_pressed('s'):
       img_path = LOG_IMGS_PATH+f"f%03d.png"%frame_id
@@ -295,6 +289,14 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
       playing_time = time.time()
       while time.time()-playing_time < song_duration+5:
         while not sQ.empty(): parse(sQ.get())
+      _, new_state = ui_recognition.get_state(th_img)
+      if new_state not in ['failed', 'failed_again']:
+        rc.finish_count += 1
+        print('\n')
+        LogI(f"Play finished, {rc.finish_count} times")
+        print('\n')
+        if rc.finish_count >= rc.max_finish_count:
+          LogI(f"Reached 'max_finish_count'");
       is_ready = False
     elif state == 'story_choose':
       hsv_img = cv.cvtColor(player.grab_full_img(), cv.COLOR_BGR2HSV)
@@ -305,8 +307,16 @@ def start(rQ:Queue, sQ:Queue, logQ:Queue):
       script.act(state)
       
     # 防止截屏过快
-    time.sleep(CYCLE_GAP)
-
+    sleep_time = time.time()
+    while time.time()-sleep_time < CYCLE_GAP:
+      # 暂停任务
+      if rc.is_allow_suspend and keyboard.is_pressed('`'):
+        LogI("Scriptor suspend")
+        while True:
+          time.sleep(0.5)
+          if keyboard.is_pressed('c'):
+            LogI("Scriptor continue")
+            break
 
 if __name__ == "__main__":
   if True: # 启动 bangcheater

@@ -4,7 +4,7 @@ from utils.Preview import  Preview
 from play.note_extractor import NoteExtractor
 import cv2 as cv
 from pathlib import Path
-import time
+import time, datetime
 
 class Mode(Enum):
   Capture          = auto()
@@ -18,10 +18,12 @@ def start():
   # 自定义运行时参数
   SCALE = 1
   is_save        = False                # 是否保存帧
+  is_date        = True                 # 是否用时间去做图片名
+  date_tag       = "offline"               # 用时间做图片名时，附加tag
   save_scale     = 1                    # 保存时的缩放
   frame_id_start = 0                    # 帧ID起始值
   frame_id       = frame_id_start       # 帧ID
-  frames_path    = './play/opps/'     # 帧保存路径
+  frames_path    = 'D:/EMO/s/'     # 帧保存路径
   frame_name     = 'f%05d.png'
   frame_list     = []                   # 在 WalkThrough 和 WalkThroughSheet 模式下，指定待查看的图片程 frame_id
                                         # 为空列表时，则抓取 frames_path 下所有 png 图片
@@ -48,11 +50,16 @@ def start():
     extractor     = NoteExtractor(full_grabber if is_extractor_use_full else track_grabber, is_extract_first_note)
   else: full_grabber, track_grabber, extractor = None, None, None
   pv = Preview(1)
-  def q(): global pv; del pv
+  def q(): nonlocal pv; del pv
   def save(img):
-    global frame_id
-    img_path = frames_path + frame_name%frame_id
-    frame_id += 1
+    nonlocal frame_id
+    if is_date:
+      img_path = frames_path + \
+        datetime.datetime.now().strftime(
+          "%Y.%m.%d.%H:%M").replace(":", ".") + date_tag + ".png"
+    else:
+      img_path = frames_path + frame_name%frame_id
+      frame_id += 1
     # cv.imwrite(img_path, cv.resize(
     #   img, [STD_WINDOW_WIDTH//save_scale, STD_WINDOW_HEIGHT//save_scale],
     #   interpolation=cv.INTER_AREA))

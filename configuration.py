@@ -90,6 +90,7 @@ class Diff(IntFlag):
 class Performance(Enum):
   AllPerfect     = auto() # AP
   FullCombo      = auto() # FC
+  DropLastFC     = auto() # 伪FC，Miss最后一个键
   Custom         = auto() # 自定义，选择 Perfect、Great、Good、Bad、Miss 各自的概率
   DropLastCustom = auto() # 自定义，同时 Miss 最后一个键（防 FC）
 
@@ -212,7 +213,7 @@ MASK_THRESHOLD = 170
 
 #============ main ============#
 
-CYCLE_GAP        = 1.0
+CYCLE_GAP        = 0.8
 
 #============ Server & Client ============#
 

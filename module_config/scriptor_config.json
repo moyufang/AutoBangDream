@@ -1,19 +1,19 @@
 {
-  "mode":"Mode.Free",
-  "event":"Event.Compete",
-  "choose":"Choose.Loop",
+  "mode":"Mode.Collaborate",
+  "event":"Event.Mission",
+  "choose":"Choose.No",
   "diff":3,
-  "performance":"Performance.AllPerfect",
+  "performance":"Performance.FullCombo",
   "additional_config":{
     "lobby":true,
     "special_stage":true
   },
-  "custom_performance":"hell",
+  "custom_performance":"master",
   "bias":[
     [-0.0, 0.0],
     [-0.032, 0.032],
+    [-0.04, 0.04],
     [-0.048, 0.048],
-    [-0.064, 0.064],
     [-1.0, 1.0]
   ],
   "weights_map":{
@@ -21,7 +21,7 @@
     "hell":[0.6, 0.2, 0.05, 0.05, 0.1],
     "fool":[0.7, 0.2, 0.05, 0.03, 0.02],
     "newbee":[0.85, 0.095, 0.005, 0.015, 0.035],
-    "skilled":[0.94, 0.05, 0.002, 0.003, 0.005],
+    "skilled":[0.943, 0.05, 0.002, 0.003, 0.002],
     "master":[0.96, 0.038, 0.0, 0.001, 0.001],
     "top":[0.98, 0.018, 0.0, 0.001, 0.001],
     "nohuman":[0.99, 0.008, 0.0, 0.001, 0.001],
@@ -44,6 +44,8 @@
     "correction_time":-40000,
     "target_diff_time":55000,
     "dilation_time":1000000,
+    "finish_count":0,
+    "max_finish_count":0,
     "is_no_action":false,
     "is_caliboration":false,
     "play_one_song_id":316,

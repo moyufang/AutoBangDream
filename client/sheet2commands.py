@@ -17,8 +17,8 @@ def sheet2commands(file_path:str, commands_path:str='./commands.sheet', note_ske
   
   with open(file_path, "r", encoding='utf-8') as file:
     raw_data = json.load(file)
-  if note_skewer.performance == Performance.DropLastCustom:
-    big_delay = 5
+  if note_skewer.performance == [Performance.DropLastCustom, Performance.DropLastFC]:
+    big_delay = 1
     if raw_data[-1]['type'] in ['Single', 'Directional']:
       raw_data[-1]['beat'] += big_delay 
     elif raw_data[-1]['type'] in ['Long', 'Slide']:
